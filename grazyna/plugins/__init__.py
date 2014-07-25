@@ -1,0 +1,1 @@
+#Czesc, jestes moim przyjacielem?
