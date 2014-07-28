@@ -22,21 +22,20 @@ def receive_func():
             saved_time = dt.now()
             prefix, command = data[0:2]
             user = User(prefix)
-            datetime = dt.now().strftime("%d-%m-%Y %H:%M:%S")
+
             if command == 'JOIN':
-                log.write(data[2], "[%s] %s(%s)::JOIN\r\n" % (datetime,
-                                                              user.nick,
-                                                              user.prefix))
+                log.write(data[2], "%s(%s)::JOIN\r\n" % (user.nick,
+                                                         user.prefix))
             # elif data[1] == 'QUIT':
             #    log.write(data[2] , "[%s] %s::QUIT"  % ( time.strftime("%d-%m-%Y %H:%M:%S") , data[0].split('!')[0][1:] ) )
             elif command == 'PART':
                 if len(data) == 4:
-                    log.write(data[2], "[%s] %s::PART[%s]\r\n" % (datetime,
-                                                                  user.nick,
-                                                                  data[3]))
+                    log.write(data[2], "%s::PART[%s]\r\n" % (
+                              user.nick,
+                              data[3]))
                 else:
-                    log.write(data[2], "[%s] %s::PART\r\n" % (datetime,
-                                                              user.nick))
+                    log.write(data[2], "%s::PART\r\n" % (datetime,
+                                                         user.nick))
             if command == '005' and not irc.ready:
                 irc.ready = True
                 ping.start()
@@ -44,7 +43,7 @@ def receive_func():
                     irc.send('JOIN', channel)
 
                 try:
-                    #irc.say('Q@CServe.quakenet.org',
+                    # irc.say('Q@CServe.quakenet.org',
                     #        'AUTH %s %s' % (config.auth['user'],
                     #                        config.auth['pass'])
                     #        )
@@ -57,9 +56,9 @@ def receive_func():
                 #print ('*PONG*')
                 irc.send('PONG', data[1])
             elif command == 'KICK':
-                log.write(data[2], "[%s] %s KICK %s \r\n" % (datetime,
-                                                             user.nick,
-                                                             data[3]))
+                log.write(data[2], "%s KICK %s \r\n" % (
+                          user.nick,
+                          data[3]))
 
                 if data[3] == config.nick:
                     irc.join(data[2])
@@ -68,14 +67,14 @@ def receive_func():
                 nick, account = data[3:5]
 
                 if (is_admin_con.nick == nick
-                and account in config.admin):
+                   and account in config.admin):
                     is_admin_con.nick = None
                     is_admin_con.set()
             elif command in ('PRIVMSG', 'NOTICE'):
                 chan, text = data[2:]
-                log.write(chan, "[%s] <%s> %s\r\n" % (datetime,
-                                                      user.nick,
-                                                      text))
+                log.write(chan, "<%s> %s\r\n" % (
+                          user.nick,
+                          text))
 
                 waiting_events.put_nowait(("msg", user, {
                                            "chan": chan,
