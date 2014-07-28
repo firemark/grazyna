@@ -23,19 +23,9 @@ def receive_func():
             prefix, command = data[0:2]
             user = User(prefix)
 
-            if command == 'JOIN':
-                log.write(data[2], "%s(%s)::JOIN\r\n" % (user.nick,
-                                                         user.prefix))
             # elif data[1] == 'QUIT':
             #    log.write(data[2] , "[%s] %s::QUIT"  % ( time.strftime("%d-%m-%Y %H:%M:%S") , data[0].split('!')[0][1:] ) )
-            elif command == 'PART':
-                if len(data) == 4:
-                    log.write(data[2], "%s::PART[%s]\r\n" % (
-                              user.nick,
-                              data[3]))
-                else:
-                    log.write(data[2], "%s::PART\r\n" % (datetime,
-                                                         user.nick))
+
             if command == '005' and not irc.ready:
                 irc.ready = True
                 ping.start()
@@ -50,18 +40,10 @@ def receive_func():
                     irc.say('nickserv', 'identify %s' % config.auth['pass'])
                 except:
                     pass
-            elif command == 'ERROR':
-                sys.exit(1)
             elif prefix == 'PING':
                 #print ('*PONG*')
                 irc.send('PONG', data[1])
-            elif command == 'KICK':
-                log.write(data[2], "%s KICK %s \r\n" % (
-                          user.nick,
-                          data[3]))
 
-                if data[3] == config.nick:
-                    irc.join(data[2])
 
             elif command == '330':  # I don't have idea where is in RFC
                 nick, account = data[3:5]
@@ -71,15 +53,6 @@ def receive_func():
                     is_admin_con.nick = None
                     is_admin_con.set()
             elif command in ('PRIVMSG', 'NOTICE'):
-                chan, text = data[2:]
-                log.write(chan, "<%s> %s\r\n" % (
-                          user.nick,
-                          text))
-
-                waiting_events.put_nowait(("msg", user, {
-                                           "chan": chan,
-                                           "txt": text
-                                           }))
                 #modules.use(chan, nick, text)
 
 
