@@ -2,23 +2,25 @@
 """
 Hasla i takie tam
 """
-
+import grazyna.auths
 
 host = 'irc.quakenet.org'
 admin = ('firemark',)
 plugin = ('ping', 'help', 'ruletka', 'czy', 'admin', 'creeper', 'onp', 'title')
 codec = ('utf-8',)
 debug = False
-ssl = False  # True jezeli wlaczyc ssl
+ssl = False
 port = 6667
 realname = 'GrazynaNg'
 ircname = 'Grazynaircbot'
 nick = 'Grazyna'
 password = 'pass-to-irc'
-auth = {'user': 'GrazynaBot', 'pass': 'XX-XX'}
+auth =  grazyna.auths.NonAuth()
+# auth = grazyna.auths.QuakenetAuth(user, passwd)
+# auth = grazyna.auths.FreenodeAuth(passwd)
 tasks = [
-    3,  # ilosc wykonanych zadan na 1 okres na 1 usera
-    30  # czas jednego okresu w sekundach
+    3,  # count executed tasks per user
+    30  # one period in seconds
 ]
 
 bajter_title = {'user': '', 'pass': ''}

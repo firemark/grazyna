@@ -12,7 +12,7 @@ class MessageController(object):
 
     NUMERIC_COMMANDS = {
         '005': 'start',
-        '330': 'whois_account'
+        '330': 'whois_account'  # I don't have idea where is in RFC
     }
 
     def __init__(self, data):
@@ -69,17 +69,7 @@ class MessageController(object):
         for channel in config.channels:
             irc.send('JOIN', channel)
 
-        try:
-            passwd = config.auth['pass']
-        except KeyError:
-            pass
-        else:
-            irc.say('nickserv', 'identify %s' % config.auth['pass'])
-
-        # irc.say('Q@CServe.quakenet.org',
-        #        'AUTH %s %s' % (config.auth['user'],
-        #                        config.auth['pass'])
-        #        )
+        config.auth.auth()
 
     def command_whois_account(self):
         nick, account = self.data[3:5]
