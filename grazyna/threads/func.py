@@ -26,36 +26,6 @@ def receive_func():
             # elif data[1] == 'QUIT':
             #    log.write(data[2] , "[%s] %s::QUIT"  % ( time.strftime("%d-%m-%Y %H:%M:%S") , data[0].split('!')[0][1:] ) )
 
-            if command == '005' and not irc.ready:
-                irc.ready = True
-                ping.start()
-                for channel in config.channels:
-                    irc.send('JOIN', channel)
-
-                try:
-                    # irc.say('Q@CServe.quakenet.org',
-                    #        'AUTH %s %s' % (config.auth['user'],
-                    #                        config.auth['pass'])
-                    #        )
-                    irc.say('nickserv', 'identify %s' % config.auth['pass'])
-                except:
-                    pass
-            elif prefix == 'PING':
-                #print ('*PONG*')
-                irc.send('PONG', data[1])
-
-
-            elif command == '330':  # I don't have idea where is in RFC
-                nick, account = data[3:5]
-
-                if (is_admin_con.nick == nick
-                   and account in config.admin):
-                    is_admin_con.nick = None
-                    is_admin_con.set()
-            elif command in ('PRIVMSG', 'NOTICE'):
-                #modules.use(chan, nick, text)
-
-
 def execute_func():
     while True:
         event_type, user, args = waiting_events.get()
