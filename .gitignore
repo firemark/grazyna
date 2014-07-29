@@ -3,5 +3,5 @@ venv
 grazyna.sublime-*
 __pycache__
 fancy_config.py
-log/*
+grazyna/log/*
 *.egg-info

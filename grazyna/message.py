@@ -1,6 +1,6 @@
 from .irc import User
 from . import irc, log, config
-from . import is_admin_con, waiting_events
+from .threads import is_admin_con, waiting_events
 
 
 class MessageController(object):
@@ -23,7 +23,7 @@ class MessageController(object):
     def execute_message(self):
         command = self.command
         command = self.NUMERIC_COMMANDS.get(command, command.lower())
-        method = getattr(self, 'command_%s' % command)
+        method = getattr(self, 'command_%s' % command, None)
 
         if method is not None:
             method()
@@ -38,7 +38,7 @@ class MessageController(object):
             reason = self.data[3]
             log.write(channel, "%s::PART[%s]" % (self.user.nick, reason))
         else:
-            log.write(data[2], "%s::PART" % self.user.nick)
+            log.write(channel, "%s::PART" % self.user.nick)
 
     def command_kick(self):
         channel, nick = self.data[2:4]
@@ -51,10 +51,10 @@ class MessageController(object):
         pass
 
     def command_privmsg(self):
-        channel, text = data[2:]
+        channel, text = self.data[2:]
         log.write(channel, "<%s> %s" % (self.user.nick, text))
         waiting_events.put_nowait((
-            "msg", user, {"chan": channel, "txt": text}
+            "msg", self.user, {"chan": channel, "txt": text}
         ))
 
     def command_notice(self):
@@ -65,7 +65,10 @@ class MessageController(object):
             return
 
         irc.ready = True
+
+        from .threads.func import ping
         ping.start()
+
         for channel in config.channels:
             irc.send('JOIN', channel)
 
