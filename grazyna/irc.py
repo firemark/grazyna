@@ -2,31 +2,62 @@
 
 import socket, config
 import config
+import asyncio
 from threading import Timer
+
 s = ''
 ready = False
 
 
-def recv():
-    global s
-    buf = s.recv(5120)
-    for codec in config.codec:
-        try:
-            cmds = buf.decode(codec).split('\r\n')[:-1]
-        except:
-            continue
+class IrcClient(asyncio.Protocol):
 
-        for cmd in (cmd for cmd in cmds if cmd):
-            if cmd[0] == ":":
-                cmd = cmd[1:]
-            cmd = cmd.split(":", 1)
-            msg = cmd[0].split()
-            if len(cmd) > 1:
-                msg.append(cmd[1])
-            if len(msg) >= 2:
-                yield msg
-        break
+    ready = False
 
+    def connection_made(self, transport):
+        pass
+
+    def data_received(self, raw_messages):
+        for message in self._parse_raw_messages_generator(raw_messages):
+            if config.debug:
+                print(' '.join(message))
+            if message[0] == 'PING':
+                self.transport.send('PONG', message[1])
+            else:
+                MessageController(message).execute_message()
+
+    def connection_lost(self, exc):
+        asyncio.get_event_loop().stop()
+
+    @classmethod
+    def _parse_raw_messages(cls, raw_messages):
+        gen = cls._parse_raw_messages_generator(raw_messages)
+        return (msg for msg in gen if len(msg) >= 2)
+
+    @staticmethod
+    def _parse_raw_messages_generator(raw_messages):
+        for codec in config.codec:
+            try:
+                encoded_data = raw_messages.decode(codec).split('\r\n')
+            except:
+                continue
+            else:
+                break
+        else:
+            return
+
+        for raw_message in filter(encoded_data, lambda x: x):
+            if raw_message[0] == ':':
+                raw_message = raw_message[1:]
+
+            if ':' in raw_message:
+                left_message, right_message = cmd.split(":", 1)
+                yield left_message.split() + [right_message]
+            else:
+                yield raw_message.split()
+
+    def send(*args):
+        string = ' '.join(str(arg) for arg in args)[:512] + '\r\n'
+        self.transport.send(string.encode())        
 
 def connect():
     global s
@@ -43,14 +74,6 @@ def connect():
     send('NICK', nick)
     send_msg('USER', config.realname, 'wr', '*', config.ircname)
 
-
-def send(*args):
-    global s
-    try:
-        string = ' '.join((str(arg) for arg in args))[:512] + '\r\n'
-        s.send(string.encode())
-    except:
-        pass
 
 
 def send_msg(*args):
