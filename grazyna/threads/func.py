@@ -3,7 +3,7 @@ Threads to receive messages and execute plugins
 '''
 from threading import Thread
 from . import waiting_events
-from .. import irc, log, config
+from .. import irc, log, config, threads
 from ..irc import User
 from ..modules import execute_msg_event
 from ..message import MessageController
@@ -17,10 +17,7 @@ def receive_func():
 
     while True:
         for data in irc.recv():
-            if data[0] == 'PING':
-                irc.send('PONG', data[1])
-            else:
-                MessageController(data).execute_message()
+            pass
 
 
 def execute_func():
@@ -34,7 +31,15 @@ def ping_func():
     while True:
         receive.join(90)
         irc.send('PING', 'Grazyna')
+        threads.ping_counter += 1
+        if threads.ping_counter > 3 or True:
+            irc.send_msg('QUIT', 'Ping Timeout')
+            irc.restart()
+            irc.connect()
 
+            sleep(1)
+
+            receive.start()
 
 receive = Thread(target=receive_func)
 execute = Thread(target=execute_func)

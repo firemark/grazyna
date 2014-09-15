@@ -1,4 +1,4 @@
-from . import irc
+#from . import irc
 
 
 class AbstractAuth(object):
