@@ -5,8 +5,37 @@ from math import isnan
 from random import random
 from ..utils.types import range_int
 from .. import format
+import operator
+import math
 
 operators = '-^+/*%&|=><~'
+special_vars = {
+    'pi': math.pi,
+    'e': math.e
+}
+
+operator_funcs = {
+    '+': operator.add,
+    '-': operator.sub,
+    '/': operator.truediv,
+    '*': operator.mul,
+    '%': operator.mod,
+    '^': operator.pow,
+    '=': operator.eq,
+    '>': operator.gt,
+    '<': operator.lt,
+    '&': lambda a, b: bool(a) and bool(b),
+    '|': lambda a, b: bool(a) or bool(b),
+}
+
+one_var_operator_funcs = {
+    '~': lambda a: not bool(a),
+    'sin': math.sin,
+    'cos': math.cos,
+    'log': math.log,
+    'log10': math.log10,
+    'log2': math.log2,
+}
 
 
 @register(cmd="onp")
@@ -15,87 +44,56 @@ def onp(bot, tasks, round:range_int(0)=3):
     bot.say("Wynik: %s" % score)
 
 
-#@register(cmd='np')
-def np(bot, tasks):
-    tasks = tasks.split()
-    new_tasks = []
-    for task in tasks:
-        try:
-            num = float(task)
-            new_tasks.append(num)
-        except ValueError:
-            new_tasks.append(task)
-    new_tasks.reverse()
-    score = calc(new_tasks)
-    bot.say("Wynik: %s" % score)
-
-
 def calc(tasks, round_num=3):
-    buffor = []
+    buffer = []
     for task in tasks:
-        try:
-            num = float(task)
-            buffor.append(num)
-        except ValueError:
-            for operator in task:
-                if operator in operators:
-                    if operator == '~':
-                        try:
-                            arg1 = buffor.pop()
-                        except IndexError:
-                            return "WTF"
-                        arg1 = not bool(arg1)
-                        buffor.append(arg1)
-                        continue
-                    try:
-                        arg1 = buffor.pop()
-                        arg2 = buffor.pop()
-                    except IndexError:
-                        return "WTF"
-                    try:
-                        if operator == '+':
-                            arg2 += arg1
-                        elif operator == '-':
-                            arg2 -= arg1
-                        elif operator == '/':
-                            if arg1 != 0:
-                                arg2 /= arg1
-                            else:
-                                arg2 = float('nan')
-                        elif operator == '*':
-                            arg2 *= arg1
-                        elif operator == '%':
-                            arg2 %= arg1
-                        elif operator == '^':
-                            if arg1 == 0:
-                                arg2 = float('nan')
-                            else:
-                                arg2 = arg2 ** arg1
-                        elif operator == '=':
-                            arg2 = arg1 == arg2
-                        elif operator == '>':
-                            arg2 = arg1 > arg2
-                        elif operator == '<':
-                            arg2 = arg1 < arg2
-                        elif operator == '&':
-                            arg2 = bool(arg1) and bool(arg2)
-                        elif operator == '|':
-                            arg2 = bool(arg1) or bool(arg2)
-                        else:
-                            return "WTF"
-                    except OverflowError:
-                        return format.bold("Over 9000!!")
-
-                    buffor.append(arg2)
-
-    if  len(buffor) == 1:
-        wart = buffor.pop()
-        if type(wart) == bool:
-            return wart.__repr__()
+        num = get_number(task)
+        if num is None:
+            result = execute(task, buffer)
+            if result is not None:
+                return result
         else:
-            if isnan(wart):
+            buffer.append(num)
+
+    if len(buffer) > 0:
+        value = buffer.pop()
+        if type(value) == bool:
+            return value.__repr__()
+        else:
+            if isnan(value):
                 if random() > 0.87:
                     return "NaNNaNNaNNaNNaN Batman!"
-            return round(wart, round_num)
+            return round(value, round_num)
     else:
-        return "WTF";
+        return "WTF"
+
+
+def get_number(task):
+    try:
+        return float(task)
+    except ValueError:
+        try:
+            return special_vars[task]
+        except KeyError:
+            return None
+
+
+def execute(op, buffer):
+    func = operator_funcs.get(op)
+    if func is None:
+        func = one_var_operator_funcs.get(op)
+        try:
+            args = [buffer.pop()]
+        except IndexError:
+            return "WTF"
+    else:
+        try:
+            args = [buffer.pop(), buffer.pop()]
+        except IndexError:
+            return "WTF"
+    try:
+        value = func(*args)
+    except OverflowError:
+        return format.bold("Over 9000!!")
+    else:
+        buffer.append(value)
