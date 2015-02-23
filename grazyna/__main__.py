@@ -1,13 +1,11 @@
 #!/usr/bin/python3
-from imp import load_source
+from importlib.machinery import SourceFileLoader
 from sys import argv
-
-
 
 
 def run():
     from . import config
-    conf = load_source("config", argv[1])
+    conf = SourceFileLoader("config", argv[1]).load_module()
 
     for var in dir(conf): # I know, hack
         setattr(config, var, getattr(conf, var))

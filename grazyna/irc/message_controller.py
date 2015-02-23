@@ -19,15 +19,6 @@ def whois_command(func):
     return inner
 
 
-class MetaMessageController(type):
-
-    def __new__(cls, name, bases, dct):
-        for name, func in dct.items():
-            if name.startswith('command_'):
-                dct[name] = asyncio.coroutine(func)
-        return type.__new__(cls, name, bases, dct)
-
-
 class MessageController(object):
 
     command = ''

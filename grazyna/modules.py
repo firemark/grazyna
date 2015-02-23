@@ -1,12 +1,11 @@
-#!/usr/bin/python3
 from . import config, format, irc, plugins
 from .request import RequestBot
 import re
-import imp
+from importlib import reload
 import traceback
 import sys
 import time
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 from inspect import getcallargs
 
 users = {}
@@ -49,11 +48,10 @@ def load_module(plug):
 
     remove_module(plug)
 
-    name = 'plugins.' + plug
-    __import__(name)
+    name = "grazyna.plugins." + plug
     module = sys.modules[name]  # to jest dziwne, ale to tak dziala
-    imp.reload(config)
-    imp.reload(module)
+    #reload(config)
+    reload(module)
 
 
 def get_args_from_text(text, max_args):

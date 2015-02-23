@@ -26,8 +26,12 @@ class RequestBot(object):
         result = yield from self.protocol.whois(nick)
         return result.account in config.admins
 
+    @property
+    def nick_chan(self):
+        return self.user.nick if self.private else self.chan
+
     def say(self, msg, nick_chan=None):
-        nick_chan = nick_chan or (self.user.nick if self.private else self.chan)
+        nick_chan = nick_chan or self.nick_chan
         self.protocol.say(nick_chan, msg)
 
     def notice(self, msg, nick=None):

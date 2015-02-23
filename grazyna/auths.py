@@ -39,5 +39,4 @@ class FreenodeAuth(AbstractAuth):
         self.passwd = passwd
 
     def auth(self, protocol):
-        print("??")
         protocol.say('nickserv', 'identify %s' % self.passwd)

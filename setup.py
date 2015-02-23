@@ -5,10 +5,8 @@ from setuptools import setup, find_packages
 here = os.path.abspath(os.path.dirname(__file__))
 
 requires = [
-    'requests'
+    'requests==2.5.1'
 ]
-
-print(find_packages('grazyna'))
 
 setup(
     name='grazyna',
@@ -18,8 +16,8 @@ setup(
     classifiers=[],
     author='Firemark',
     author_email='marpiechula@gmail.com',
-    url='',
-    keywords='irc socket',
+    url='https://github.com/firemark/grazyna',
+    keywords='irc socket bot',
     packages=['grazyna'] + ['grazyna.' + p for p in find_packages('grazyna')],
     include_package_data=True,
     zip_safe=False,
