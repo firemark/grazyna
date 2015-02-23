@@ -23,18 +23,20 @@ class WhoisFuture(asyncio.Future):
 
     data = None
 
-    def __init__(*args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.data = WhoisData()
 
 
 class WhoisData(object):
 
-    idle = 0
-    account = None
-    ircname = None
-    host = None
-    channels = None
+    __slots__ = ('idle', 'account', 'ircname', 'host',
+                 'channels', 'realname', 'server')
 
     def __init__(self):
         self.channels = []
+        self.idle = 0
+        self.account = None
+        self.ircname = None
+        self.host = None
+        self.realname = None

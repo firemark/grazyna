@@ -15,7 +15,7 @@ class AbstractAuth(object):
 
 class NonAuth(AbstractAuth):
 
-    def auth(self):
+    def auth(self, protocol):
         pass
 
 class QuakenetAuth(AbstractAuth):
@@ -27,8 +27,8 @@ class QuakenetAuth(AbstractAuth):
         self.user = user
         self.passwd = passwd
 
-    def auth(self):
-        irc.say('Q@CServe.quakenet.org AUTH {0.user} {0.passwd}'.format(self))
+    def auth(self, protocol):
+        protocol.say('Q@CServe.quakenet.org AUTH {0.user} {0.passwd}'.format(self))
 
 
 class FreenodeAuth(AbstractAuth):
@@ -38,5 +38,6 @@ class FreenodeAuth(AbstractAuth):
     def __init__(self, passwd):
         self.passwd = passwd
 
-    def auth(self):
-        irc.say('nickserv', 'identify %s' % self.passwd)
+    def auth(self, protocol):
+        print("??")
+        protocol.say('nickserv', 'identify %s' % self.passwd)

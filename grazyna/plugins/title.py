@@ -1,13 +1,10 @@
 #!/usr/bin/python3
 
 from ..utils import register
-from .. import config
 import re
-import http.client
 import requests
 from requests.exceptions import RequestException
 from html.parser import HTMLParser
-from collections import defaultdict
 
 default_charset = 'utf-8'
 
@@ -112,4 +109,4 @@ def title(bot, ssl: lambda s: s == 's', address, address_another):
         if cont_type.startswith("text/html") and msg:
             title = TitleParser.get_title(msg)
             if title:
-                bot.say(title)
+                bot.say("⚡ %s" % title)

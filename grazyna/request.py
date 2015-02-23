@@ -3,8 +3,8 @@ Created on 31-03-2013
 
 @author: firemark
 '''
-from .irc import *
-from .threads import is_admin
+from asyncio import coroutine
+from . import config
 
 
 class RequestBot(object):
@@ -12,40 +12,45 @@ class RequestBot(object):
     Has useful informations as channel, nick
     and methods to comunicate with user/channel"""
 
-    private = False
-    user = None
-    reason = None
-    chan = None
+    __slots__ = ('private', 'user', 'chan', 'protocol')
 
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
+    def __init__(self, protocol, *, user=None, chan=None, private=False):
+        self.protocol = protocol
+        self.private = private
+        self.user = user
+        self.chan = chan
 
+    @coroutine
     def is_admin(self, nick=None):
-        return is_admin(nick or self.user.nick)
+        nick = nick or self.user.nick
+        result = yield from self.protocol.whois(nick)
+        return result.account in config.admins
 
     def say(self, msg, nick_chan=None):
-        say(
-            nick_chan or (self.user.nick if self.private else self.chan),
-            msg)
+        nick_chan = nick_chan or (self.user.nick if self.private else self.chan)
+        self.protocol.say(nick_chan, msg)
 
     def notice(self, msg, nick=None):
-        notice(nick or self.user.nick, msg)
+        self.protocol.notice(nick or self.user.nick, msg)
 
     def reply(self, msg, chan=None, nick=None):
-        reply(nick or self.user.nick, msg, chan or self.chan)
+        self.protocol.reply(nick or self.user.nick, msg, chan or self.chan)
 
     def kick(self, who=None, why='', chan=None):
         if not self.private:
-            kick(who or self.user.nick, self.chan, why)
+            self.protocol.kick(who or self.user.nick, self.chan, why)
 
-    def private(self, msg, nick=None):
-        say(nick or self.user.nick, msg)
+    def private_say(self, msg, nick=None):
+        self.protocol.say(nick or self.user.nick, msg)
 
     def command(self, *args):
-        send(*args)
+        self.protocol.send(*args)
+
+    def command_msg(self, *args):
+        self.protocol.send_msg(*args)
 
     def mode(self, flag, arg, chan=None):
-        mode(chan or self.chan, flag, arg)
+        self.protocol.mode(chan or self.chan, flag, arg)
 
     def time_ban(self, time, who=None, why='', prefix=None, chan=None):
         chan = chan or self.chan

@@ -28,7 +28,7 @@ class IrcSender(object):
 
     def reply(self, nick, msg, chan=None):
         msg = msg if not chan else '%s: %s' % (nick, msg)
-        self.say(nick, msg)
+        self.say(chan or nick, msg)
 
     def kick(self, nick, chan, why=''):
         self.send_msg('KICK', chan, nick, why)
@@ -36,10 +36,17 @@ class IrcSender(object):
     def mode(self, chan, flag, arg):
         self.send('MODE', chan, flag, arg)
 
+    @asyncio.coroutine
     def whois(self, nick):
+        """
+
+        :param nick:
+        :return: WhoisData
+        """
         self.whois_heap[nick] = future = WhoisFuture()
-        data = yield from asyncio.wait(future)
-        return data
+        self.send('WHOIS', nick)
+        result = yield from future
+        return result
 
     def time_ban(self, time, nick, chan, why='', prefix=None):
         prefix = prefix or nick + '!*@*'

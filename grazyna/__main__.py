@@ -2,7 +2,7 @@
 from imp import load_source
 from sys import argv
 
-from .irc import client
+
 
 
 def run():
@@ -12,7 +12,9 @@ def run():
     for var in dir(conf): # I know, hack
         setattr(config, var, getattr(conf, var))
 
-    #modules.load()
+    from .irc import client
+    from . import modules
+    modules.load()
     client.connect()
 
 

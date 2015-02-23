@@ -90,8 +90,8 @@ def check_type(args, kwargs, event):
     return dict_arg
 
 
-def execute_msg_event(channel, user, msg):
-    global events, re_split, lasttime
+def execute_msg_event(protocol, channel, user, msg):
+    global lasttime
     nick = user.nick
     #print(channel, user, msg)
 
@@ -131,6 +131,7 @@ def execute_msg_event(channel, user, msg):
                 args, kwargs = get_args_from_text(text, event.max_args)
 
         bot = RequestBot(
+            protocol=protocol,
             private=private,
             chan=channel,
             user=user
@@ -159,17 +160,16 @@ def execute_msg_event(channel, user, msg):
         except Exception as e:
             break
 
-
-
         try:
             event(bot, **dict_arg)
         except:
             traceback.print_exc(file=sys.stdout)
             tb = traceback.format_exc().split('\n')[-4:-1]
-            irc.reply(user.nick,
-                      format.bold('ERR: ') + tb[2] +
-                      format.color(tb[0], format.color.red),
-                      channel
-                      )
+            protocol.reply(
+                user.nick,
+                format.bold('ERR: ') + tb[2] +
+                format.color(tb[0], format.color.red),
+                channel
+            )
         if not event.next:
             break

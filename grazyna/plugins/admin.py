@@ -7,7 +7,6 @@ from ..utils.types import range_int, is_chan
 
 import sys
 
-
 @register(cmd='reload', admin_required=True)
 def reload(bot, module):
     modules.load_module(module)
@@ -23,12 +22,12 @@ def kick(bot, who, chan=None, why=''):
 
 @register(cmd='join', admin_required=True)
 def join(bot, chan):
-    irc.send('JOIN', chan)
+    bot.command('JOIN', chan)
 
 
 @register(cmd='eutanazja', admin_required=True)
 def quit_bot(bot):
-    irc.send_msg('QUIT', 'why? :(')
+    bot.command('QUIT', 'why? :(')
 
 
 @register(cmd='say', admin_required=True)
@@ -53,7 +52,7 @@ def op(bot, nick=None, chan:is_chan=None):
 def part(bot, chan:is_chan, why=None):
     if bot.private and not chan:
         return
-    irc.send_msg('PART', chan, why)
+    bot.command_msg('PART', chan, why)
 
 
 @register(cmd='rocket', admin_required=True)

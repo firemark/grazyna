@@ -3,9 +3,15 @@
 Hasla i takie tam
 """
 import grazyna.auths
+from grazyna.plugins.czy import czy as czy_plugin
 
 host = 'irc.quakenet.org'
 admin = ('firemark',)
+
+plugins = {
+    'admin': 'grazyna.plugins.admin',
+    'czy': czy_plugin(cmd='czy', answers="conf_files/czy.txt")
+}
 plugin = ('ping', 'help', 'ruletka', 'czy', 'admin', 'creeper', 'onp', 'title')
 codec = ('utf-8',)
 debug = False
@@ -25,9 +31,5 @@ tasks = [
 
 bajter_title = {'user': '', 'pass': ''}
 channels = ('#test', )
-czy_file = "conf_files/czy.txt"
-quotes = {
-    "latin": "conf_files/latin.txt"
-}
 log_dir = "log"
 # channels = ('#testtest',)

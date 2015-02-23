@@ -32,8 +32,8 @@ class IrcClient(asyncio.Protocol, IrcSender):
 
     def data_received(self, raw_messages):
         for message in self._parse_raw_messages(raw_messages):
-            if not config.debug:
-                print(' '.join(message))
+            #if config.debug:
+            #    print(' '.join(message))
     
             MessageController(self, message).execute_message()
 

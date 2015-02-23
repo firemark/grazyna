@@ -4,6 +4,7 @@ from functools import wraps
 
 from .. import log, config
 from .exc import NoSuchNickError
+from grazyna.modules import execute_msg_event
 from .models import User
 
 
@@ -18,6 +19,15 @@ def whois_command(func):
     return inner
 
 
+class MetaMessageController(type):
+
+    def __new__(cls, name, bases, dct):
+        for name, func in dct.items():
+            if name.startswith('command_'):
+                dct[name] = asyncio.coroutine(func)
+        return type.__new__(cls, name, bases, dct)
+
+
 class MessageController(object):
 
     command = ''
@@ -27,7 +37,7 @@ class MessageController(object):
     protocol = None
 
     NUMERIC_COMMANDS = {
-        '004': 'start',
+        '005': 'start',
         '330': 'whois_account',  # I don't have idea where is in RFC
         '311': 'whois_user',
         '312': 'whois_server',
@@ -59,16 +69,16 @@ class MessageController(object):
             method()
 
     def get_from_whois(self, pop=False):
-        nick = self.data[1]
+        nick = self.data[3]
         heap = self.protocol.whois_heap
-        return heap.get(nick) if pop else heap.pop(nick, None)
+        return heap.get(nick) if not pop else heap.pop(nick, None)
 
     def command_join(self):
         channel = self.data[2]
         log.write(channel, '%s(%s)::JOIN' % (self.user.nick, self.user.prefix))
 
     def command_ping(self):
-        log.send('PONG', self.data[1])
+        self.protocol.send('PONG', self.data[1])
 
     def command_part(self):
         channel = self.data[2]
@@ -83,7 +93,7 @@ class MessageController(object):
         log.write(channel, "%s KICK %s" % (self.user.nick, nick))
 
         if nick == config.nick:
-            irc.join(channel)
+            self.protocol.send('JOIN', channel)
 
     def command_error(self):
         pass
@@ -91,6 +101,7 @@ class MessageController(object):
     def command_privmsg(self):
         channel, text = self.data[2:]
         log.write(channel, "<%s> %s" % (self.user.nick, text))
+        execute_msg_event(self.protocol, channel, self.user, text)
 
     def command_notice(self):
         self.command_privmsg()
@@ -104,17 +115,18 @@ class MessageController(object):
         for channel in config.channels:
             self.protocol.send('JOIN', channel)
 
-        config.auth.auth()
+        config.auth.auth(self.protocol)
 
     @whois_command
     def command_whois_account(self, whois_data):
-        whois_data.account = self.data[5]
+        whois_data.account = self.data[4]
 
     @whois_command
     def command_whois_user(self, whois_data):
-        user, host, _, ircname = self.data[1:5]
+        user, realname, host, _, ircname = self.data[3:5]
         whois_data.user = user
         whois_data.host = host
+        whois_data.realname = realname
         whois_data.ircname = ircname
 
     @whois_command
