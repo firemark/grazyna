@@ -2,7 +2,6 @@
 
 import asyncio
 import re
-from threading import Timer
 
 from .. import config
 from .message_controller import MessageController
@@ -19,10 +18,12 @@ re_message = re.compile(
 class IrcClient(asyncio.Protocol, IrcSender):
 
     ready = False
+    config = False
 
-    def __init__(self):
+    def __init__(self, config):
         IrcSender.__init__(self)
         asyncio.Protocol.__init__(self)
+        self.config = config
 
     def connection_made(self, transport):
         self.transport = transport
@@ -60,9 +61,12 @@ class IrcClient(asyncio.Protocol, IrcSender):
                 data.append(long_message)
             yield data
 
-def connect():
+
+def connect(config):
+    main_config = config['main']
+    factory = lambda: IrcClient(config)
     loop = asyncio.get_event_loop()
-    coro = loop.create_connection(IrcClient, config.host, config.port)
+    coro = loop.create_connection(IrcClient, main_config['host'], main_config['port'])
     loop.run_until_complete(coro)
     loop.run_forever()
     loop.close()

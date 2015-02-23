@@ -1,3 +1,2 @@
-Losowa odpowiedz nr1
-Losowa odpowiedz nr2
-wychodzę
+Random message nr1
+Random message nr2
