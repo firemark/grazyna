@@ -23,6 +23,22 @@ re_split = re.compile(r' *(?:(\w+)[:=] *)?(?:"([^"]+)"|(\S+))')
 re_cmd = re.compile('^(?:%s: |\.)(\S+)(?: (.*)|)$' % config.nick)
 
 
+class ModuleManager(object):
+
+    config = None
+
+    def __init__(self, config):
+        self.config = config
+
+    def load_all(self):
+        plugins = self.config['plugins']
+        for name, module in plugins.items():
+            self.load(name, module)
+
+    def load(self, name, module):
+        pass
+
+
 def load():
     for plugin in config.plugin:
         __import__("grazyna.plugins." + plugin)

@@ -3,7 +3,6 @@
 import asyncio
 import re
 
-from .. import config
 from .message_controller import MessageController
 from .sender import IrcSender
 
@@ -18,7 +17,7 @@ re_message = re.compile(
 class IrcClient(asyncio.Protocol, IrcSender):
 
     ready = False
-    config = False
+    config = None
 
     def __init__(self, config):
         IrcSender.__init__(self)
@@ -26,24 +25,23 @@ class IrcClient(asyncio.Protocol, IrcSender):
         self.config = config
 
     def connection_made(self, transport):
+        config = self.config['main']
         self.transport = transport
-        self.send('PASS', config.password)
-        self.send('NICK', config.nick)
-        self.send_msg('USER', config.ircname, 'wr', '*', config.realname)
+        self.send('PASS', config['password'])
+        self.send('NICK', config['nick'])
+        self.send_msg('USER', config['ircname'], 'wr', '*', config['realname'])
 
     def data_received(self, raw_messages):
-        for message in self._parse_raw_messages(raw_messages):
-            #if config.debug:
-            #    print(' '.join(message))
-    
-            MessageController(self, message).execute_message()
+        codecs = self.config['main']['codecs']
+        for message in self._parse_raw_messages(raw_messages, codecs):
+            MessageController(self, message, self.config).execute_message()
 
     def connection_lost(self, exc):
         asyncio.get_event_loop().stop()
 
     @staticmethod
-    def _parse_raw_messages(raw_messages):
-        for codec in config.codec:
+    def _parse_raw_messages(raw_messages, codecs=('utf-8',)):
+        for codec in codecs:
             try:
                 encoded_data = raw_messages.decode(codec)
             except UnicodeDecodeError:
@@ -66,7 +64,7 @@ def connect(config):
     main_config = config['main']
     factory = lambda: IrcClient(config)
     loop = asyncio.get_event_loop()
-    coro = loop.create_connection(IrcClient, main_config['host'], main_config['port'])
+    coro = loop.create_connection(factory, main_config['host'], main_config['port'])
     loop.run_until_complete(coro)
     loop.run_forever()
     loop.close()

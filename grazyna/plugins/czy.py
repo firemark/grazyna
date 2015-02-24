@@ -11,22 +11,21 @@ from time import sleep
 create_help('czy', '?czy <pytanie>')
 
 
-@register(cmd='czy')
+@register(cmd='czy')  # BotArg('alias')
 def czy(bot, ask=None):
-    replies = get_replies(bot.config)
+    replies = get_replies(bot)
     reply = random.choice(replies)
     bot.reply(reply)
-czy.dict_replies = {}
 
 
-def get_replies(config):
-    plugin_name = config['__name__']
-    replies = czy.dict_replies.get(plugin_name)
+def get_replies(bot):
+    plugin_name = bot.config['__name__']
+    replies = bot.temp.get('replies')
     if replies is None:
-        pathname = config['file']
+        pathname = bot.config['file']
         with open(pathname) as f:
             replies = f.readlines()
-        czy.dict_replies[plugin_name] = replies
+        bot.temp['replies'] = replies
 
 @register(reg='[.?]czy.*')
 def czy_reg(bot):

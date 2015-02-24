@@ -38,7 +38,7 @@ class MessageController(object):
         '401': 'no_such_nick',
     }
 
-    def __init__(self, protocol, data):
+    def __init__(self, protocol, data, config):
         self.protocol = protocol
         prefix_or_not = data[0]
 

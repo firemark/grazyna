@@ -2,8 +2,6 @@
 Useful decorators and function
 '''
 import re
-from ..modules import events, modules
-from functools import wraps
 import inspect
 
 
@@ -55,7 +53,8 @@ class register(object):
 
     def __call__(self, func):
         func.__dict__.update(self.kwargs)
-        module_name = func.__module__[8:]  # len('plugins.') = 8
+        func.is_bot_event = True
+        module_name = func.__module__.split('.')[-1]
 
         func.name = '%s.%s' % (module_name, func.name or func.__name__.lower())
 
@@ -67,7 +66,7 @@ class register(object):
             else:
                 func.max_args = -1
 
-            events["msg"][func.name] = func
-            modules[module_name].append(func)
+            #events["msg"][func.name] = func
+            #modules[module_name].append(func)
 
         return func
