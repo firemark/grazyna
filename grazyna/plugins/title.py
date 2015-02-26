@@ -4,7 +4,7 @@ from ..utils import register
 import re
 import requests
 from requests.exceptions import RequestException
-from html.parser import HTMLParser
+from html.parser import HTMLParser, unescape
 
 default_charset = 'utf-8'
 
@@ -58,7 +58,7 @@ class TitleParser(HTMLParser):
         title = title.strip()
 
         if title:
-            return re_space.sub(' ', parser.unescape(title))
+            return re_space.sub(' ', unescape(title))
 
 
 def get_response(adress, method='GET', data=None, headers=None, redirect=True,

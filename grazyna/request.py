@@ -10,7 +10,7 @@ from . import config
 class RequestBot(object):
     """First argument in register functions.
     Has useful informations as channel, nick
-    and methods to comunicate with user/channel"""
+    and methods to communicate with user/channel"""
 
     __slots__ = ('private', 'user', 'chan', 'protocol')
 

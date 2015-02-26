@@ -26,48 +26,29 @@ re_cmd = re.compile('^(?:%s: |\.)(\S+)(?: (.*)|)$' % config.nick)
 class ModuleManager(object):
 
     config = None
+    plugins = None
 
     def __init__(self, config):
         self.config = config
+        self.plugins = []
+
 
     def load_all(self):
         plugins = self.config['plugins']
-        for name, module in plugins.items():
-            self.load(name, module)
+        for name, module_path in plugins.items():
+            self.load(name, module_path)
 
-    def load(self, name, module):
-        pass
+    def load(self, name, module_path):
+        module = __import__(module_path)
+        reload(module)
+        self.plugins[name] = [
+            obj for obj in module.__dict__.values()
+            if getattr(obj, 'is_bot_event', False) is True
+        ]
 
-
-def load():
-    for plugin in config.plugin:
-        __import__("grazyna.plugins." + plugin)
-
-
-def remove_module(plug):
-    """Remove plugin"""
-
-    global modules, events
-    if plug in modules:
-        for type_events in events.values():
-            try:
-                del type_events[plug]
-            except KeyError:
-                pass
-        return True
-    else:
-        return False
-
-
-def load_module(plug):
-    """(Re)loading plugin"""
-
-    remove_module(plug)
-
-    name = "grazyna.plugins." + plug
-    module = sys.modules[name]  # to jest dziwne, ale to tak dziala
-    #reload(config)
-    reload(module)
+    def remove(self, name):
+        module = self.plugins[name]
+        del self.plugins[name]
 
 
 def get_args_from_text(text, max_args):
