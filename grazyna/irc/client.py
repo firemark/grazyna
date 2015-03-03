@@ -18,18 +18,22 @@ class IrcClient(asyncio.Protocol, IrcSender):
 
     ready = False
     config = None
+    importer = None
 
     def __init__(self, config):
         IrcSender.__init__(self)
         asyncio.Protocol.__init__(self)
         self.config = config
+        self.importer = self.ModuleManager(self)
+        self.importer.load_all()
 
     def connection_made(self, transport):
         config = self.config['main']
         self.transport = transport
         self.send('PASS', config['password'])
         self.send('NICK', config['nick'])
-        self.send_msg('USER', config['ircname'], 'wr', '*', config['realname'])
+        self.send_msg('USER', self.config['ircname'], 'wr',
+                      '*', self.config['realname'])
 
     def data_received(self, raw_messages):
         codecs = self.config['main']['codecs']

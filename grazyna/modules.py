@@ -1,4 +1,4 @@
-from . import config, format, irc, plugins
+from . import format
 from .request import RequestBot
 import re
 from importlib import reload
@@ -20,18 +20,21 @@ events = {
 }
 
 re_split = re.compile(r' *(?:(\w+)[:=] *)?(?:"([^"]+)"|(\S+))')
-re_cmd = re.compile('^(?:%s: |\.)(\S+)(?: (.*)|)$' % config.nick)
+#re_cmd = re.compile('^(?:%s: |\.)(\S+)(?: (.*)|)$' % config.nick)
 
 
 class ModuleManager(object):
 
-    config = None
+    protocol = None
     plugins = None
 
-    def __init__(self, config):
-        self.config = config
+    def __init__(self, protocol):
+        self.protocol = protocol
         self.plugins = []
 
+    @property
+    def config(self):
+        return self.config.protocol
 
     def load_all(self):
         plugins = self.config['plugins']
@@ -49,6 +52,118 @@ class ModuleManager(object):
     def remove(self, name):
         module = self.plugins[name]
         del self.plugins[name]
+
+    def execute(self, channel, user, msg):
+        cmd, text = self.get_cmd_and_text(msg)
+        private = channel[0] != "#"
+
+        if cmd is not None:
+            self.execute_command(cmd, text, private, channel, user)
+
+        self.execute_regs(msg, private, channel, user)
+
+    def execute_command(self, cmd, text, private, channel, user):
+        name, func = self.find_command(cmd, private)
+        if func is None:
+            return
+
+        if text:
+            args, kwargs = get_args_from_text(text, func.max_args)
+        else:
+            args = []
+            kwargs = {}
+
+        self.execute_func(func, name, private, channel, user, args, kwargs)
+
+    def execute_regs(self, msg, private, channel, user):
+        for name, func, matches in self.find_regs(msg, private):
+            for match in matches:
+                args = match.groups()
+                kwargs = match.groupdict()
+                self.execute_func(func, name, private, channel, user,
+                                  args, kwargs)
+
+    def find_function_in_plugin_with_name(self, predicate, private):
+        return (
+                name, func
+                for plugin in self.plugins
+                for name, func in plugin.items()
+                if (
+                    (
+                        (not private and func.on_channel)
+                        or (private and func.on_private)
+                    )
+                    and predicate(func)
+                )
+            )
+
+    def find_command(self, cmd, private):
+        return next(
+            self.find_function_in_plugin_with_name(
+                lambda func, name: (
+                    func.is_reg is False
+                    and func.cmd.format(self.get_plugin_cfg(name)) == cmd
+                ),
+                private
+            ),
+            None
+        )
+
+    def find_regs(self, msg, private):
+        return (
+            name, func, func.compiled_reg.finditer(msg)
+            for name, func in self.find_function_in_plugin_with_name(
+                lambda f: f.is_reg is False,
+                private
+            )
+        )
+
+    def get_plugin_cfg(self, name):
+        return self.protocol.config['plugin:%s' % name]
+
+    def get_cmd_and_text(self, msg):
+        cfg = self.config['main']
+        startswith = lambda key: msg.startswith(cfg[key])
+        if startswith('command-prefix'):
+            data = msg.split(maxsplit=1)
+            cmd = data[0][1:]
+        elif startswith('nick'):
+            data = msg.split(maxsplit=2)[1:]
+            cmd = data[0]
+        else:
+            return None, msg
+        text = data[1] if len(data) > 1 else ""
+        return cmd, text
+
+    def execute_func(self, func, name, private, channel, user, args, kwargs):
+        bot = RequestBot(
+            protocol=self.protocol,
+            private=private,
+            chan=channel if not private else None,
+            config=self.get_plugin_cfg(name),
+            importer=self,
+            user=user
+        )
+
+        try:
+            dict_arg = check_type(args, kwargs, func)
+        except:
+            pass
+
+        if func.admin_required and not bot.is_admin():
+            return
+
+        try:
+            func(bot, **dict_arg)
+        except:
+            traceback.print_exc(file=sys.stdout)
+            tb = traceback.format_exc().split('\n')[-4:-1]
+            self.protocol.reply(
+                user.nick,
+                format.bold('ERR: ') + tb[2] +
+                format.color(tb[0], format.color.red),
+                channel
+            )
 
 
 def get_args_from_text(text, max_args):
@@ -85,6 +200,8 @@ def check_type(args, kwargs, event):
     return dict_arg
 
 
+
+#OLD - ignore this
 def execute_msg_event(protocol, channel, user, msg):
     global lasttime
     nick = user.nick
@@ -107,34 +224,6 @@ def execute_msg_event(protocol, channel, user, msg):
         args = []
         kwargs = {}
 
-        if not((private and event.on_private)
-               or (not private and event.on_channel)):
-            continue
-
-        if event.is_reg:
-            match = event.compiled_reg.search(msg)
-            if match:
-                args = match.groups()
-                kwargs = match.groupdict()
-            else:
-                continue
-        else:
-            if cmd != event.cmd:
-                continue
-
-            if text:
-                args, kwargs = get_args_from_text(text, event.max_args)
-
-        bot = RequestBot(
-            protocol=protocol,
-            private=private,
-            chan=channel,
-            user=user
-        )
-
-        if event.admin_required and not bot.is_admin():
-            break
-
         if event.block:
             # filtr antyspamowy, nienawidze was
             newtime = time.time()
@@ -150,21 +239,6 @@ def execute_msg_event(protocol, channel, user, msg):
                 else:
                     break
 
-        try:
-            dict_arg = check_type(args, kwargs, event)
-        except Exception as e:
-            break
 
-        try:
-            event(bot, **dict_arg)
-        except:
-            traceback.print_exc(file=sys.stdout)
-            tb = traceback.format_exc().split('\n')[-4:-1]
-            protocol.reply(
-                user.nick,
-                format.bold('ERR: ') + tb[2] +
-                format.color(tb[0], format.color.red),
-                channel
-            )
         if not event.next:
             break

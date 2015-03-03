@@ -15,6 +15,8 @@ class register(object):
         "on_channel": True,
         "event": "msg",
         "is_reg": False,
+        "reg": None,
+        "cmd": None,
         "next": False,
         "name": None,
         "priority": 0,

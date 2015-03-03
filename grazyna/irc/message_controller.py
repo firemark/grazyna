@@ -21,12 +21,6 @@ def whois_command(func):
 
 class MessageController(object):
 
-    command = ''
-    prefix = ''
-    user = None
-    data = None
-    protocol = None
-
     NUMERIC_COMMANDS = {
         '005': 'start',
         '330': 'whois_account',  # I don't have idea where is in RFC
@@ -38,7 +32,9 @@ class MessageController(object):
         '401': 'no_such_nick',
     }
 
-    def __init__(self, protocol, data, config):
+    __slots__ = ('user', 'data', 'protocol', 'command', 'prefix', 'importer')
+
+    def __init__(self, protocol, data):
         self.protocol = protocol
         prefix_or_not = data[0]
 
@@ -83,7 +79,7 @@ class MessageController(object):
         channel, nick = self.data[2:4]
         log.write(channel, "%s KICK %s" % (self.user.nick, nick))
 
-        if nick == config.nick:
+        if nick == self.protocol.config['main']['nick']:
             self.protocol.send('JOIN', channel)
 
     def command_error(self):
@@ -103,10 +99,10 @@ class MessageController(object):
 
         self.protocol.ready = True
 
-        for channel in config.channels:
+        for channel in self.protocol.config['main']['channels']:
             self.protocol.send('JOIN', channel)
 
-        config.auth.auth(self.protocol)
+        self.protocol.config['main']['auth'].auth(self.protocol)
 
     @whois_command
     def command_whois_account(self, whois_data):
