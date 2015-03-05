@@ -32,7 +32,7 @@ class MessageController(object):
         '401': 'no_such_nick',
     }
 
-    __slots__ = ('user', 'data', 'protocol', 'command', 'prefix', 'importer')
+    __slots__ = ('user', 'data', 'protocol', 'command', 'prefix')
 
     def __init__(self, protocol, data):
         self.protocol = protocol
@@ -88,7 +88,7 @@ class MessageController(object):
     def command_privmsg(self):
         channel, text = self.data[2:]
         log.write(channel, "<%s> %s" % (self.user.nick, text))
-        execute_msg_event(self.protocol, channel, self.user, text)
+        self.protocol.importer.execute(channel, self.user, text)
 
     def command_notice(self):
         self.command_privmsg()
@@ -99,10 +99,13 @@ class MessageController(object):
 
         self.protocol.ready = True
 
-        for channel in self.protocol.config['main']['channels']:
+        for channel in self.protocol.config.getlist('main', 'channels'):
             self.protocol.send('JOIN', channel)
 
-        self.protocol.config['main']['auth'].auth(self.protocol)
+        #kwargs = self.protocol.config['auth'].items()
+        #del kwargs['module']
+        #cls_auther = self.protocol.config.getmodule('auth', 'module')
+        #cls_auther(**kwargs).auth(self.protocol)
 
     @whois_command
     def command_whois_account(self, whois_data):

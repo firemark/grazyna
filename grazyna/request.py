@@ -15,7 +15,7 @@ class RequestBot(object):
     __slots__ = ('private', 'user', 'chan', 'protocol', 'config')
 
     def __init__(self, protocol, *, user=None, chan=None, private=False,
-                 config=None, importer=None):
+                 config=None):
         self.protocol = protocol
         self.private = private
         self.user = user

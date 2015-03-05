@@ -30,19 +30,20 @@ class ModuleManager(object):
 
     def __init__(self, protocol):
         self.protocol = protocol
-        self.plugins = []
+        self.plugins = {}
 
     @property
     def config(self):
-        return self.config.protocol
+        return self.protocol.config
 
     def load_all(self):
-        plugins = self.config['plugins']
-        for name, module_path in plugins.items():
+        for name, module_path in self.config.items('plugins'):
             self.load(name, module_path)
 
     def load(self, name, module_path):
-        module = __import__(module_path)
+        print(name, module_path)
+        path, module_name = module_path.rsplit(".", 1)
+        module = __import__(module_path, globals(), locals(), [module_name])
         reload(module)
         self.plugins[name] = [
             obj for obj in module.__dict__.values()
@@ -85,17 +86,17 @@ class ModuleManager(object):
 
     def find_function_in_plugin_with_name(self, predicate, private):
         return (
-                name, func
-                for plugin in self.plugins
-                for name, func in plugin.items()
-                if (
-                    (
-                        (not private and func.on_channel)
-                        or (private and func.on_private)
-                    )
-                    and predicate(func)
+            (name, func)
+            for name, plugin in self.plugins.items()
+            for func in plugin
+            if (
+                (
+                    (not private and func.on_channel)
+                    or (private and func.on_private)
                 )
+                and predicate(func, name)
             )
+        )
 
     def find_command(self, cmd, private):
         return next(
@@ -111,15 +112,20 @@ class ModuleManager(object):
 
     def find_regs(self, msg, private):
         return (
-            name, func, func.compiled_reg.finditer(msg)
+            (name, func, func.compiled_reg.finditer(msg))
             for name, func in self.find_function_in_plugin_with_name(
-                lambda f: f.is_reg is False,
+                lambda func, name: func.is_reg is True,
                 private
             )
         )
 
     def get_plugin_cfg(self, name):
-        return self.protocol.config['plugin:%s' % name]
+        cfg = self.config
+        plugin_name = 'plugin:%s' % name
+        if cfg.has_section(plugin_name):
+            return cfg.items(plugin_name)
+        else:
+            return {}
 
     def get_cmd_and_text(self, msg):
         cfg = self.config['main']
@@ -141,7 +147,6 @@ class ModuleManager(object):
             private=private,
             chan=channel if not private else None,
             config=self.get_plugin_cfg(name),
-            importer=self,
             user=user
         )
 

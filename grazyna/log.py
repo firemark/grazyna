@@ -6,6 +6,7 @@ from datetime import datetime
 files = {};
 
 def write(channel, msg):
+    return
     str_datetime = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
     if channel not in files:
         files[channel] = open(config.log_dir + '/' + channel, "at")

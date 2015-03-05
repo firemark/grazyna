@@ -24,7 +24,7 @@ class IrcClient(asyncio.Protocol, IrcSender):
         IrcSender.__init__(self)
         asyncio.Protocol.__init__(self)
         self.config = config
-        self.importer = self.ModuleManager(self)
+        self.importer = self.config.getmodule('main', 'importer')(self)
         self.importer.load_all()
 
     def connection_made(self, transport):
@@ -32,13 +32,12 @@ class IrcClient(asyncio.Protocol, IrcSender):
         self.transport = transport
         self.send('PASS', config['password'])
         self.send('NICK', config['nick'])
-        self.send_msg('USER', self.config['ircname'], 'wr',
-                      '*', self.config['realname'])
+        self.send_msg('USER', config['ircname'], 'wr', '*', config['realname'])
 
     def data_received(self, raw_messages):
-        codecs = self.config['main']['codecs']
+        codecs = self.config.getlist('main', 'codecs')
         for message in self._parse_raw_messages(raw_messages, codecs):
-            MessageController(self, message, self.config).execute_message()
+            MessageController(self, message).execute_message()
 
     def connection_lost(self, exc):
         asyncio.get_event_loop().stop()

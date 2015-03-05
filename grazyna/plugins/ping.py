@@ -5,7 +5,7 @@ from .. import config
 import random
 from ..utils import register
 
-
+"""
 @register(reg=r'^' + config.nick + r'!$')
 def ping(bot):
     bot.say(bot.user.nick + '!')
@@ -17,7 +17,7 @@ def ping2(bot):
                 'Hey', 'Siema', '?', 'czeeeść'
                                 )))
 
-
+"""
 @register(cmd='utf8')
 def utf(bot):
     bot.reply("żółw,lwiątko,kurczę")

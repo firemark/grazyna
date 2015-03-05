@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 from sys import argv
-from . import config
+from .config import create_config
 from .irc import client
 
 
@@ -9,7 +9,8 @@ def load_config(filename):
 
 
 def run():
-    cfg = load_config(argv[1])
+    with open(argv[1]) as f:
+        cfg = create_config(f)
     client.connect(cfg)
 
 
