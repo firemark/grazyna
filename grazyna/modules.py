@@ -1,4 +1,6 @@
 from . import format
+import asyncio
+from asyncio import async, coroutine
 from .request import RequestBot
 import re
 from importlib import reload
@@ -41,7 +43,6 @@ class ModuleManager(object):
             self.load(name, module_path)
 
     def load(self, name, module_path):
-        print(name, module_path)
         path, module_name = module_path.rsplit(".", 1)
         module = __import__(module_path, globals(), locals(), [module_name])
         reload(module)
@@ -54,15 +55,17 @@ class ModuleManager(object):
         module = self.plugins[name]
         del self.plugins[name]
 
+    @coroutine
     def execute(self, channel, user, msg):
         cmd, text = self.get_cmd_and_text(msg)
         private = channel[0] != "#"
 
         if cmd is not None:
-            self.execute_command(cmd, text, private, channel, user)
+            async(self.execute_command(cmd, text, private, channel, user))
 
-        self.execute_regs(msg, private, channel, user)
+        async(self.execute_regs(msg, private, channel, user))
 
+    @coroutine
     def execute_command(self, cmd, text, private, channel, user):
         name, func = self.find_command(cmd, private)
         if func is None:
@@ -76,6 +79,7 @@ class ModuleManager(object):
 
         self.execute_func(func, name, private, channel, user, args, kwargs)
 
+    @coroutine
     def execute_regs(self, msg, private, channel, user):
         for name, func, matches in self.find_regs(msg, private):
             for match in matches:

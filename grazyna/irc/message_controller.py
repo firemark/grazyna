@@ -1,11 +1,12 @@
-import asyncio
-
 from functools import wraps
+from datetime import datetime
+from asyncio import async
 
-from .. import log, config
+from .. import log
 from .exc import NoSuchNickError
-from grazyna.modules import execute_msg_event
 from .models import User
+
+import os.path
 
 
 def whois_command(func):
@@ -31,6 +32,7 @@ class MessageController(object):
         '318': 'whois_end',
         '401': 'no_such_nick',
     }
+    log_files = {}
 
     __slots__ = ('user', 'data', 'protocol', 'command', 'prefix')
 
@@ -47,6 +49,10 @@ class MessageController(object):
 
         self.data = data
 
+    @property
+    def config(self):
+        return self.protocol.config
+
     def execute_message(self):
         command = self.command.lower()
         command = self.NUMERIC_COMMANDS.get(command, command)
@@ -60,9 +66,19 @@ class MessageController(object):
         heap = self.protocol.whois_heap
         return heap.get(nick) if not pop else heap.pop(nick, None)
 
+    def log(self, channel, msg):
+        str_datetime = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+        if channel not in self.log_files:
+            self.log_files[channel] = open(
+                os.path.join(self.config.get('main', 'dir_log'), channel), "at"
+            )
+        file_log = self.log_files[channel]
+        file_log.write('[%s] %s\r\n"' % (str_datetime, msg))
+        file_log.flush()
+
     def command_join(self):
         channel = self.data[2]
-        log.write(channel, '%s(%s)::JOIN' % (self.user.nick, self.user.prefix))
+        self.log(channel, '%s(%s)::JOIN' % (self.user.nick, self.user.prefix))
 
     def command_ping(self):
         self.protocol.send('PONG', self.data[1])
@@ -71,13 +87,13 @@ class MessageController(object):
         channel = self.data[2]
         if len(self.data) == 4:
             reason = self.data[3]
-            log.write(channel, "%s::PART[%s]" % (self.user.nick, reason))
+            self.log(channel, "%s::PART[%s]" % (self.user.nick, reason))
         else:
-            log.write(channel, "%s::PART" % self.user.nick)
+            self.log(channel, "%s::PART" % self.user.nick)
 
     def command_kick(self):
         channel, nick = self.data[2:4]
-        log.write(channel, "%s KICK %s" % (self.user.nick, nick))
+        self.log(channel, "%s KICK %s" % (self.user.nick, nick))
 
         if nick == self.protocol.config['main']['nick']:
             self.protocol.send('JOIN', channel)
@@ -87,8 +103,8 @@ class MessageController(object):
 
     def command_privmsg(self):
         channel, text = self.data[2:]
-        log.write(channel, "<%s> %s" % (self.user.nick, text))
-        self.protocol.importer.execute(channel, self.user, text)
+        self.log(channel, "<%s> %s" % (self.user.nick, text))
+        async(self.protocol.importer.execute(channel, self.user, text))
 
     def command_notice(self):
         self.command_privmsg()
@@ -102,10 +118,10 @@ class MessageController(object):
         for channel in self.protocol.config.getlist('main', 'channels'):
             self.protocol.send('JOIN', channel)
 
-        #kwargs = self.protocol.config['auth'].items()
-        #del kwargs['module']
-        #cls_auther = self.protocol.config.getmodule('auth', 'module')
-        #cls_auther(**kwargs).auth(self.protocol)
+        kwargs = dict(self.protocol.config.items('auth'))
+        del kwargs['module']
+        cls_auther = self.protocol.config.getmodule('auth', 'module')
+        cls_auther(**kwargs).auth(self.protocol)
 
     @whois_command
     def command_whois_account(self, whois_data):
