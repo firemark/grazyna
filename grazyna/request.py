@@ -12,15 +12,16 @@ class RequestBot(object):
     Has useful informations as channel, nick
     and methods to communicate with user/channel"""
 
-    __slots__ = ('private', 'user', 'chan', 'protocol', 'config')
+    __slots__ = ('private', 'user', 'chan', 'protocol', 'config', 'plugin')
 
     def __init__(self, protocol, *, user=None, chan=None, private=False,
-                 config=None):
+                 config=None, plugin=None):
         self.protocol = protocol
         self.private = private
         self.user = user
         self.chan = chan
         self.config = config
+        self.plugin = plugin
 
     @coroutine
     def is_admin(self, nick=None):

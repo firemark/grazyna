@@ -25,6 +25,20 @@ re_split = re.compile(r' *(?:(\w+)[:=] *)?(?:"([^"]+)"|(\S+))')
 #re_cmd = re.compile('^(?:%s: |\.)(\S+)(?: (.*)|)$' % config.nick)
 
 
+class Plugin(list):
+
+    __slots__ = ('temp', 'name', 'module_path')
+
+    def __init__(self, name, module_path, funcs):
+        super().__init__(funcs)
+        self.temp = {}
+        self.name = name
+        self.module_path = module_path
+
+    def __repr__(self):
+        return "Plugin('%s')" % self.name
+
+
 class ModuleManager(object):
 
     protocol = None
@@ -46,13 +60,19 @@ class ModuleManager(object):
         path, module_name = module_path.rsplit(".", 1)
         module = __import__(module_path, globals(), locals(), [module_name])
         reload(module)
-        self.plugins[name] = [
-            obj for obj in module.__dict__.values()
-            if getattr(obj, 'is_bot_event', False) is True
-        ]
+        self.plugins[name] = Plugin(
+            name, module_path,
+            [
+                obj for obj in module.__dict__.values()
+                if getattr(obj, 'is_bot_event', False) is True
+            ]
+        )
+
+    def reload(self, name):
+        plugin = self.plugins[name]
+        self.load(name, plugin.module_path)
 
     def remove(self, name):
-        module = self.plugins[name]
         del self.plugins[name]
 
     @coroutine
@@ -67,7 +87,7 @@ class ModuleManager(object):
 
     @coroutine
     def execute_command(self, cmd, text, private, channel, user):
-        name, func = self.find_command(cmd, private)
+        plugin, func = self.find_command(cmd, private)
         if func is None:
             return
 
@@ -77,57 +97,51 @@ class ModuleManager(object):
             args = []
             kwargs = {}
 
-        self.execute_func(func, name, private, channel, user, args, kwargs)
+        self.execute_func(func, plugin, private, channel, user, args, kwargs)
 
     @coroutine
     def execute_regs(self, msg, private, channel, user):
-        for name, func, matches in self.find_regs(msg, private):
-            for match in matches:
+        for plugin, func, matches in self.find_regs(msg, private):
+            for match, _ in zip(matches, range(3)):
                 args = match.groups()
                 kwargs = match.groupdict()
-                self.execute_func(func, name, private, channel, user,
+                self.execute_func(func, plugin, private, channel, user,
                                   args, kwargs)
 
-    def find_function_in_plugin_with_name(self, predicate, private):
+    def find_function_in_plugin_with_name(self, private):
         return (
-            (name, func)
+            (plugin, func)
             for name, plugin in self.plugins.items()
             for func in plugin
-            if (
-                (
-                    (not private and func.on_channel)
-                    or (private and func.on_private)
-                )
-                and predicate(func, name)
-            )
+            if (not private and func.on_channel)
+            or (private and func.on_private)
         )
 
     def find_command(self, cmd, private):
         return next(
-            self.find_function_in_plugin_with_name(
-                lambda func, name: (
-                    func.is_reg is False
-                    and func.cmd.format(self.get_plugin_cfg(name)) == cmd
-                ),
-                private
+            (
+                (plugin, func) for plugin, func
+                in self.find_function_in_plugin_with_name(private)
+                if func.is_reg is False
+                and func.cmd.format(**self.get_plugin_cfg(plugin.name)) == cmd
             ),
-            None
+            (None, None)
         )
 
     def find_regs(self, msg, private):
         return (
-            (name, func, func.compiled_reg.finditer(msg))
-            for name, func in self.find_function_in_plugin_with_name(
-                lambda func, name: func.is_reg is True,
-                private
-            )
+            (plugin, func, func.compiled_reg.finditer(msg))
+            for plugin, func in self.find_function_in_plugin_with_name(private)
+            if func.is_reg is True
         )
 
     def get_plugin_cfg(self, name):
         cfg = self.config
         plugin_name = 'plugin:%s' % name
         if cfg.has_section(plugin_name):
-            return cfg.items(plugin_name)
+            conf = dict(cfg.items(plugin_name))
+            conf['__nick__'] = cfg.get('main', 'nick')
+            return conf
         else:
             return {}
 
@@ -145,12 +159,13 @@ class ModuleManager(object):
         text = data[1] if len(data) > 1 else ""
         return cmd, text
 
-    def execute_func(self, func, name, private, channel, user, args, kwargs):
+    def execute_func(self, func, plugin, private, channel, user, args, kwargs):
         bot = RequestBot(
             protocol=self.protocol,
             private=private,
             chan=channel if not private else None,
-            config=self.get_plugin_cfg(name),
+            config=self.get_plugin_cfg(plugin.name),
+            plugin=plugin,
             user=user
         )
 

@@ -4,7 +4,7 @@ from ..utils import register, create_help
 #create_help('czy', '?czy <pytanie>')
 
 
-@register(cmd='%(cmd)')  # BotArg('alias')
+@register(cmd='{cmd}')
 def quotes(bot, ask=None):
     replies = get_replies(bot)
     reply = random.choice(replies)
@@ -12,10 +12,10 @@ def quotes(bot, ask=None):
 
 
 def get_replies(bot):
-    plugin_name = bot.config['__name__']
-    replies = bot.temp.get('replies')
+    replies = bot.plugin.temp.get('replies')
     if replies is None:
         pathname = bot.config['file']
         with open(pathname) as f:
-            replies = f.readlines()
-        bot.temp['replies'] = replies
+            replies = f.read().splitlines()
+        bot.plugin.temp['replies'] = replies
+    return replies
