@@ -1,15 +1,13 @@
 #!/usr/bin/python3
 
 from ..utils import register
-from .. import modules, irc, config
 from time import sleep
 from ..utils.types import range_int, is_chan
 
-import sys
 
 @register(cmd='reload', admin_required=True)
 def reload(bot, module):
-    modules.load_module(module)
+    bot.protocol.importer.reload(module)
     bot.reply('Done!')
 
 
