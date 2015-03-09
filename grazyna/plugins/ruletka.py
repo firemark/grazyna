@@ -10,44 +10,42 @@ from .. import format
 import json
 from datetime import datetime, timedelta
 
+
 ban_times = (5, 10, 13, 14, 15, 15)
-time = 0
-cell = 0
-lastnick = ''
-on_play = False
-last_warn = datetime.now()
 
 create_help('ruletka', '.krec || .strzal || .stats')
 
-
 @register(cmd='krec', on_private=False)
 def play(bot):
-    global last_warn, cell, on_play
-    if not on_play:
+    if not bot.temp.get('on_play', False):
         on_play = True
-        time = 0
-        cell = randint(0, 5)
-        last_warn = datetime.now()
+        bot.temp['cell'] = 0
+        bot.temp['cell_with_bullet'] = randint(0, 5)
+        bot.temp['last_warn'] = datetime.now()
         bot.say(format.bold('*trrrr*'))
     else:
-        bot.say('zakrecone!')
+        bot.say('zakręcone!')
 
 
 @register(cmd='strzal', on_private=False)
 def shot(bot):
-    global last_warn, cell, on_play, stats, ban_times, lastnick, time
-    if on_play:
-            if lastnick == bot.user.prefix:
-                if datetime.now() - last_warn < timedelta(minutes=5):
-                    bot.reply('Spokoj!')
-                    last_warn = datetime.now()
-            else:
-                last_warn = datetime.now()
-                if cell == time:
-                    bot.time_ban(ban_times[time], why='Bach!')
-                    lastnick = ''
-                    on_play = False
-                else:
-                    time += 1
-                    lastnick = bot.user.prefix
-                    bot.say(format.bold('*klik*'))
+    if not bot.temp.get('on_play', False):
+        return
+
+    old_last_warn = bot.temp.get('last_warn', datetime.now())
+    bot.temp['last_warn'] = datetime.now()
+
+    if bot.temp.get('last_nick') == bot.user.prefix:
+        if datetime.now() - old_last_warn < timedelta(minutes=5):
+            bot.reply('Spokoj!')
+        return
+
+    cell = bot.temp['cell']
+    if bot.temp['cell_with_bullet'] == cell:
+        bot.time_ban(ban_times[cell], why='Bach!')
+        del bot.temp['last_nick']
+        bot.temp['on_play'] = False
+    else:
+        bot.temp['cell'] += 1
+        bot.temp['last_nick'] = bot.user.prefix
+        bot.say(format.bold('*klik*'))

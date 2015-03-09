@@ -15,7 +15,7 @@ class RequestBot(object):
     __slots__ = ('private', 'user', 'chan', 'protocol', 'config', 'plugin')
 
     def __init__(self, protocol, *, user=None, chan=None, private=False,
-                 config=None, plugin=None):
+                 config=None, plugin=None, db=None):
         self.protocol = protocol
         self.private = private
         self.user = user
@@ -27,7 +27,7 @@ class RequestBot(object):
     def is_admin(self, nick=None):
         nick = nick or self.user.nick
         result = yield from self.protocol.whois(nick)
-        return result.account in config.admins
+        return result.account in self.protocol.config.getlist('main', 'admins')
 
     @property
     def nick_chan(self):

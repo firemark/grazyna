@@ -1,7 +1,9 @@
 #!/usr/bin/python3
 
 import asyncio
+#import pyejdb
 import re
+import datetime
 
 from .message_controller import MessageController
 from .sender import IrcSender
@@ -19,11 +21,16 @@ class IrcClient(asyncio.Protocol, IrcSender):
     ready = False
     config = None
     importer = None
+    db = None
 
     def __init__(self, config):
         IrcSender.__init__(self)
         asyncio.Protocol.__init__(self)
         self.config = config
+        #self.db = pyejdb.EJDB(
+        #    self.config.get('main', 'database_path'),
+        #    pyejdb.DEFAULT_OPEN_MODE | pyejdb.JBOTRUNC
+        #)
         self.importer = self.config.getmodule('main', 'importer')(self)
         self.importer.load_all()
 

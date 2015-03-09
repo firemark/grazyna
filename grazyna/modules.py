@@ -1,28 +1,21 @@
 from . import format
-import asyncio
+
 from asyncio import async, coroutine
+
 from .request import RequestBot
-import re
 from importlib import reload
+from collections import defaultdict
+from inspect import getcallargs
+from datetime import datetime, timedelta
+
+import re
 import traceback
 import sys
 import time
-from collections import defaultdict
-from inspect import getcallargs
 
-users = {}
-lasttime = 0
-modules = defaultdict(list)
-event_types = ("msg", "kick")
 
-# set defaultdicts in events
-events = {
-    event_type: {}
-    for event_type in event_types
-}
-
+#parse args
 re_split = re.compile(r' *(?:(\w+)[:=] *)?(?:"([^"]+)"|(\S+))')
-#re_cmd = re.compile('^(?:%s: |\.)(\S+)(?: (.*)|)$' % config.nick)
 
 
 class Plugin(list):
@@ -39,14 +32,28 @@ class Plugin(list):
         return "Plugin('%s')" % self.name
 
 
+class ExecutedCounter(object):
+
+    __slots__ = ('last_time', 'counter')
+
+    def __init__(self):
+        self.last_time = datetime.now()
+        self.counter = 0
+
+    def inc(self):
+        self.counter += 1
+
+
 class ModuleManager(object):
 
     protocol = None
     plugins = None
+    executed_counters = None
 
     def __init__(self, protocol):
         self.protocol = protocol
         self.plugins = {}
+        self.executed_counters = defaultdict(ExecutedCounter)
 
     @property
     def config(self):
@@ -81,11 +88,10 @@ class ModuleManager(object):
         private = channel[0] != "#"
 
         if cmd is not None:
-            async(self.execute_command(cmd, text, private, channel, user))
+            self.execute_command(cmd, text, private, channel, user)
 
-        async(self.execute_regs(msg, private, channel, user))
+        self.execute_regs(msg, private, channel, user)
 
-    @coroutine
     def execute_command(self, cmd, text, private, channel, user):
         plugin, func = self.find_command(cmd, private)
         if func is None:
@@ -99,7 +105,6 @@ class ModuleManager(object):
 
         self.execute_func(func, plugin, private, channel, user, args, kwargs)
 
-    @coroutine
     def execute_regs(self, msg, private, channel, user):
         for plugin, func, matches in self.find_regs(msg, private):
             for match, _ in zip(matches, range(3)):
@@ -160,6 +165,10 @@ class ModuleManager(object):
         return cmd, text
 
     def execute_func(self, func, plugin, private, channel, user, args, kwargs):
+
+        if func.block and self.is_blocked(user):
+            return  # filtr antyspamowy, nienawidze was
+
         bot = RequestBot(
             protocol=self.protocol,
             private=private,
@@ -177,8 +186,12 @@ class ModuleManager(object):
         if func.admin_required and not bot.is_admin():
             return
 
+        async(self._execute_func(func, bot, dict_arg, user, channel))
+
+    @coroutine
+    def _execute_func(self, func, bot, args, user, channel):
         try:
-            func(bot, **dict_arg)
+            func(bot, **args)
         except:
             traceback.print_exc(file=sys.stdout)
             tb = traceback.format_exc().split('\n')[-4:-1]
@@ -188,6 +201,30 @@ class ModuleManager(object):
                 format.color(tb[0], format.color.red),
                 channel
             )
+
+    def is_blocked(self, user):
+        now = datetime.now()
+        delta = timedelta(
+            seconds=self.config.getint('main', 'time_to_block')
+        )
+
+        self.executed_counters = defaultdict(ExecutedCounter, { # cleanups
+            key: counter for key, counter in self.executed_counters.items()
+            if now - counter.last_time < delta
+        })
+
+        nick = user.prefix
+        counter = self.executed_counters[nick]
+
+        executed_commands_per_time = self.config.getint(
+            'main', 'executed_commands_per_time'
+        )
+
+        if counter.counter > executed_commands_per_time:
+            return True
+        else:
+            counter.inc()
+            return False
 
 
 def get_args_from_text(text, max_args):
@@ -222,47 +259,3 @@ def check_type(args, kwargs, event):
             dict_arg[key] = arg_type(item)
     del dict_arg['bot']
     return dict_arg
-
-
-
-#OLD - ignore this
-def execute_msg_event(protocol, channel, user, msg):
-    global lasttime
-    nick = user.nick
-    #print(channel, user, msg)
-
-    # match if is a command
-    cmd_match = re_cmd.match(msg)
-    if cmd_match:
-        cmd, text = cmd_match.groups()
-    else:
-        cmd = None
-
-    if channel[0] != "#":
-        channel = None
-        private = True
-    else:
-        private = False
-
-    for event in events["msg"].values():
-        args = []
-        kwargs = {}
-
-        if event.block:
-            # filtr antyspamowy, nienawidze was
-            newtime = time.time()
-            #print(lasttime, newtime)
-            if lasttime < newtime:
-                lasttime = newtime + config.tasks[1]
-                users.clear()
-            if nick not in users:
-                users[nick] = 1
-            else:
-                if users[nick] < config.tasks[0]:
-                    users[nick] += 1
-                else:
-                    break
-
-
-        if not event.next:
-            break
