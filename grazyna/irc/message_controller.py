@@ -129,8 +129,8 @@ class MessageController(object):
 
     @whois_command
     def command_whois_user(self, whois_data):
-        user, realname, host, _, ircname = self.data[3:5]
-        whois_data.user = user
+        nick, realname, host, _, ircname = self.data[3:8]
+        whois_data.nick = nick
         whois_data.host = host
         whois_data.realname = realname
         whois_data.ircname = ircname

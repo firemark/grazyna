@@ -1,6 +1,7 @@
 from . import format
 
-from asyncio import async, coroutine
+from asyncio import async, coroutine, gather
+from asyncio.futures import Future
 
 from .request import RequestBot
 from importlib import reload
@@ -11,8 +12,6 @@ from datetime import datetime, timedelta
 import re
 import traceback
 import sys
-import time
-
 
 #parse args
 re_split = re.compile(r' *(?:(\w+)[:=] *)?(?:"([^"]+)"|(\S+))')
@@ -20,13 +19,14 @@ re_split = re.compile(r' *(?:(\w+)[:=] *)?(?:"([^"]+)"|(\S+))')
 
 class Plugin(list):
 
-    __slots__ = ('temp', 'name', 'module_path')
+    __slots__ = ('temp', 'name', 'module_path', 'future')
 
     def __init__(self, name, module_path, funcs):
         super().__init__(funcs)
         self.temp = {}
         self.name = name
         self.module_path = module_path
+        self.future = Future()
 
     def __repr__(self):
         return "Plugin('%s')" % self.name
@@ -67,7 +67,7 @@ class ModuleManager(object):
         path, module_name = module_path.rsplit(".", 1)
         module = __import__(module_path, globals(), locals(), [module_name])
         reload(module)
-        self.plugins[name] = Plugin(
+        self.plugins[name] = plugin = Plugin(
             name, module_path,
             [
                 obj for obj in module.__dict__.values()
@@ -75,12 +75,27 @@ class ModuleManager(object):
             ]
         )
 
+        @coroutine
+        def execute_loops():
+            future = plugin.future
+            loops = [
+                func(self.protocol, plugin, future)
+                for func in module.__dict__.values()
+                if getattr(func, 'is_loop', False) is True
+            ]
+
+            yield from gather(*loops)
+
+        async(execute_loops())
+
     def reload(self, name):
         plugin = self.plugins[name]
+        plugin.future.cancel()
         self.load(name, plugin.module_path)
 
     def remove(self, name):
-        del self.plugins[name]
+        plugin = self.plugins.pop(name)
+        plugin.future.cancel()
 
     @coroutine
     def execute(self, channel, user, msg):
@@ -181,15 +196,16 @@ class ModuleManager(object):
         try:
             dict_arg = check_type(args, kwargs, func)
         except:
-            pass
-
-        if func.admin_required and not bot.is_admin():
             return
 
         async(self._execute_func(func, bot, dict_arg, user, channel))
 
     @coroutine
     def _execute_func(self, func, bot, args, user, channel):
+        if func.admin_required:
+            is_admin = yield from bot.is_admin()
+            if not is_admin:
+                return
         try:
             func(bot, **args)
         except:

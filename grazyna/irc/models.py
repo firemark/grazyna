@@ -31,11 +31,12 @@ class WhoisFuture(asyncio.Future):
 class WhoisData(object):
 
     __slots__ = ('idle', 'account', 'ircname', 'host',
-                 'channels', 'realname', 'server')
+                 'channels', 'realname', 'server', 'nick')
 
     def __init__(self):
         self.channels = []
         self.idle = 0
+        self.nick = None
         self.account = None
         self.ircname = None
         self.host = None

@@ -22,12 +22,13 @@ def italic(msg):
 
 def color(msg, front, back=None):
     if back:
-        front = str(front) + ',' + str(front)
+        front = str(front) + ',' + str(back)
     else:
         front = str(front)
     return "\x03" + front + msg + "\x03"
 
 #colors
+color.white = 0
 color.black = 1
 color.dark_blue = 2
 color.green = 3
@@ -43,4 +44,3 @@ color.light_blue = 12
 color.pink = 13
 color.dark_gray = 14
 color.light_gray = 15
-color.white = 16

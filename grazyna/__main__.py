@@ -1,11 +1,6 @@
-#!/usr/bin/python3
 from sys import argv
 from .config import create_config
 from .irc import client
-
-
-def load_config(filename):
-    pass
 
 
 def run():

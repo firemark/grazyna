@@ -4,10 +4,31 @@ from ..utils import register
 from time import sleep
 from ..utils.types import range_int, is_chan
 
+from ..config import create_config
+from sys import argv
+
 
 @register(cmd='reload', admin_required=True)
 def reload(bot, module):
     bot.protocol.importer.reload(module)
+    bot.reply('Done!')
+
+
+@register(cmd='load-plugin', admin_required=True)
+def load_plugin(bot, module, name):
+    bot.protocol.importer.load(name, module)
+    bot.reply('Done!')
+
+@register(cmd='remove-plugin', admin_required=True)
+def load_plugin(bot, name):
+    bot.protocol.importer.remove(name)
+    bot.reply('Done!')
+
+
+@register(cmd='reload-config', admin_required=True)
+def reload_config(bot):
+    with open(argv[1]) as f:
+        bot.protocol.config = create_config(f)
     bot.reply('Done!')
 
 
