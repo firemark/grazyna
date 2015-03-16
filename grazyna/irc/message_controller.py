@@ -1,8 +1,8 @@
+import asyncio
 from functools import wraps
 from datetime import datetime
 from asyncio import async
 
-from .. import log
 from .exc import NoSuchNickError
 from .models import User
 
@@ -83,6 +83,9 @@ class MessageController(object):
     def command_ping(self):
         self.protocol.send('PONG', self.data[1])
 
+    def command_pong(self):
+        self.protocol.ping_counter = 0
+
     def command_part(self):
         channel = self.data[2]
         if len(self.data) == 4:
@@ -114,6 +117,7 @@ class MessageController(object):
             return
 
         self.protocol.ready = True
+        async(ping_pong(self.protocol))
 
         for channel in self.protocol.config.getlist('main', 'channels'):
             self.protocol.send('JOIN', channel)
@@ -154,3 +158,14 @@ class MessageController(object):
         future = self.get_from_whois(pop=True)
         if future:
             future.set_exception(NoSuchNickError)
+
+
+@asyncio.coroutine
+def ping_pong(protocol):
+    while True:
+        protocol.ping_counter += 1
+        protocol.send_msg('PING', '1337')
+        yield from asyncio.sleep(64)
+        if protocol.ping_counter > 4:  # 4 * 64 = 256 seconds
+            break
+    protocol.transport.close()

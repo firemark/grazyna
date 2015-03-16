@@ -22,8 +22,10 @@ class IrcClient(asyncio.Protocol, IrcSender):
     config = None
     importer = None
     db = None
+    connection_lost_future = None
+    ping_counter = 0
 
-    def __init__(self, config):
+    def __init__(self, config, connection_lost_future):
         IrcSender.__init__(self)
         asyncio.Protocol.__init__(self)
         self.config = config
@@ -33,6 +35,7 @@ class IrcClient(asyncio.Protocol, IrcSender):
         #)
         self.importer = self.config.getmodule('main', 'importer')(self)
         self.importer.load_all()
+        self.connection_lost_future = connection_lost_future
 
     def connection_made(self, transport):
         config = self.config['main']
@@ -47,7 +50,8 @@ class IrcClient(asyncio.Protocol, IrcSender):
             MessageController(self, message).execute_message()
 
     def connection_lost(self, exc):
-        asyncio.get_event_loop().stop()
+        self.connection_lost_future.set_exception(exc)
+        self.importer.cancel_tasks()
 
     @staticmethod
     def _parse_raw_messages(raw_messages, codecs=('utf-8',)):
@@ -71,10 +75,16 @@ class IrcClient(asyncio.Protocol, IrcSender):
 
 
 def connect(config):
-    main_config = config['main']
-    factory = lambda: IrcClient(config)
     loop = asyncio.get_event_loop()
-    coro = loop.create_connection(factory, main_config['host'], main_config['port'])
-    loop.run_until_complete(coro)
-    loop.run_forever()
-    loop.close()
+    try:
+        while True:
+            main_config = config['main']
+            future = asyncio.Future()
+            factory = lambda: IrcClient(config, future)
+            coro = loop.create_connection(
+                factory, main_config['host'], main_config['port']
+            )
+            loop.run_until_complete(coro)
+            loop.run_until_complete(future)
+    finally:
+        loop.close()

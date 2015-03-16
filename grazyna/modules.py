@@ -63,6 +63,10 @@ class ModuleManager(object):
         for name, module_path in self.config.items('plugins'):
             self.load(name, module_path)
 
+    def cancel_tasks(self):
+        for plugin in self.plugins.values():
+            plugin.future.cancel()
+
     def load(self, name, module_path):
         path, module_name = module_path.rsplit(".", 1)
         module = __import__(module_path, globals(), locals(), [module_name])
@@ -75,18 +79,15 @@ class ModuleManager(object):
             ]
         )
 
-        @coroutine
-        def execute_loops():
-            future = plugin.future
-            loops = [
-                func(self.protocol, plugin, future)
-                for func in module.__dict__.values()
-                if getattr(func, 'is_loop', False) is True
-            ]
+        future = plugin.future
+        loops = [
+            func(self.protocol, plugin, future)
+            for func in module.__dict__.values()
+            if getattr(func, 'is_loop', False) is True
+        ]
 
-            yield from gather(*loops)
-
-        async(execute_loops())
+        for loop in loops:
+            async(loop)
 
     def reload(self, name):
         plugin = self.plugins[name]
