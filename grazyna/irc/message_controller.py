@@ -38,6 +38,9 @@ class MessageController(object):
 
     def __init__(self, protocol, data):
         self.protocol = protocol
+        if not data:
+            self.data = []
+            return
         prefix_or_not = data[0]
 
         if prefix_or_not[0] == ':':
@@ -54,6 +57,8 @@ class MessageController(object):
         return self.protocol.config
 
     def execute_message(self):
+        if not self.data:
+            return
         command = self.command.lower()
         command = self.NUMERIC_COMMANDS.get(command, command)
         method = getattr(self, 'command_%s' % command, None)
