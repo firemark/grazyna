@@ -8,7 +8,6 @@ from .. import format
 import operator
 import math
 
-operators = '-^+/*%&|=><~'
 special_vars = {
     'pi': math.pi,
     'e': math.e
@@ -40,8 +39,12 @@ one_var_operator_funcs = {
 
 @register(cmd="onp")
 def onp(bot, tasks, round:range_int(0)=3):
+    """
+        example: .onp 2 2 2 + * log2 round=5
+        operators https://github.com/firemark/grazyna/blob/master/grazyna/plugins/onp.py
+    """
     score = calc(tasks.split(), round)
-    bot.say("Wynik: %s" % score)
+    bot.say("Result: %s" % score)
 
 
 def calc(tasks, round_num=3):

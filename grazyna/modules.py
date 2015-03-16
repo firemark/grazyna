@@ -129,24 +129,31 @@ class ModuleManager(object):
                 self.execute_func(func, plugin, private, channel, user,
                                   args, kwargs)
 
-    def find_function_in_plugin_with_name(self, private):
+    def find_function_in_plugin_with_name(self, private=None):
         return (
             (plugin, func)
             for name, plugin in self.plugins.items()
             for func in plugin
-            if (not private and func.on_channel)
+            if private is None
+            or (not private and func.on_channel)
             or (private and func.on_private)
         )
 
-    def find_command(self, cmd, private):
+    def find_command(self, cmd, private=None):
         return next(
             (
                 (plugin, func) for plugin, func
-                in self.find_function_in_plugin_with_name(private)
-                if func.is_reg is False
-                and func.cmd.format(**self.get_plugin_cfg(plugin.name)) == cmd
+                in self.get_commands(private)
+                if func.cmd.format(**self.get_plugin_cfg(plugin.name)) == cmd
             ),
             (None, None)
+        )
+
+    def get_commands(self, private=None):
+        return (
+            (plugin, func) for plugin, func
+            in self.find_function_in_plugin_with_name(private)
+            if func.is_reg is False
         )
 
     def find_regs(self, msg, private):

@@ -2,16 +2,38 @@
 from ..utils import register
 from .. import format
 
+import re
+
 
 @register(cmd='help')
-def help(bot, name):
-    name = input.group(1)
-    for module in modules.values():
-        for reg, plugin in module:
-            if plugin.help and name == plugin.name:
-                bot.say(format.bold(plugin.name.upper()) + ': ' + plugin.help)
-                return None
-    bot.reply('Nie znalazłem takowego modułu.')
+def cmd_help(bot, name=None):
+    """show help"""
+    importer = bot.protocol.importer
+    if name is None:
+        show_commands(bot, importer)
+    else:
+        show_command_help(bot, importer, name)
+
+
+def show_commands(bot, importer):
+    bot.say(
+        ', '.join(
+            func.cmd.format(**importer.get_plugin_cfg(plugin.name))
+            for plugin, func in importer.get_commands()
+            if not func.admin_required
+        )
+    )
+
+
+def show_command_help(bot, importer, name):
+    plugin, func = importer.find_command(name)
+    if func is None:
+        return bot.reply('cmd not found')
+
+    cmd = func.cmd.format(**importer.get_plugin_cfg(plugin.name))
+    doc = re.sub('\s+', ' ', func.__doc__) if func.__doc__ else 'help not found'
+    bot.say('{}: {}'.format(format.bold(cmd), doc))
+
 
 
 #class commands(Plugin):

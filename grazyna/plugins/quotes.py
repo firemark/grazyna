@@ -12,6 +12,7 @@ def quotes(bot, ask=None):
 
 
 def get_replies(bot):
+    """funny random quotes"""
     replies = bot.plugin.temp.get('replies')
     if replies is None:
         pathname = bot.config['file']

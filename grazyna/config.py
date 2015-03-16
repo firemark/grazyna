@@ -4,7 +4,7 @@ import re
 
 class MyConfigParser(ConfigParser):
 
-    def getlist(self, section, key, seperator=' '):
+    def getlist(self, section, key, seperator=','):
         return re.split(' *%s *' % seperator, self[section][key])
 
     def getmodule(self, section, key):
