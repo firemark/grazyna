@@ -37,7 +37,7 @@ def cmd_args(bot, name):
         )
     )
 
-@register()
+@register(cmd='source')
 def source(bot):
     bot.say('https://github.com/firemark/grazyna')
 
