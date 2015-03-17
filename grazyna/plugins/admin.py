@@ -20,7 +20,7 @@ def load_plugin(bot, module, name):
     bot.reply('Done!')
 
 @register(cmd='remove-plugin', admin_required=True)
-def load_plugin(bot, name):
+def remove_plugin(bot, name):
     bot.protocol.importer.remove(name)
     bot.reply('Done!')
 
