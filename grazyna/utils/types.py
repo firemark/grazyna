@@ -1,3 +1,4 @@
+import re
 '''
 Types to arguments
 '''
@@ -20,3 +21,14 @@ def is_chan(chan):
     if chan and chan[0] != '#':
         raise TypeError('Is not a channel')
     return chan
+
+
+def regexp(reg):
+    compiled_reg = re.compile(reg)
+    def func(x):
+        matches = compiled_reg.match(x)
+        if matches is None:
+            raise TypeError('value is not corrected')
+        return matches
+
+    return func
