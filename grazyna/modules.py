@@ -14,7 +14,7 @@ import traceback
 import sys
 
 #parse args
-re_split = re.compile(r' *(?:(\w+)[:=] *)?(?:"([^"]+)"|(\S+))')
+re_split = re.compile(r' *(?:(\w+)= *)?(?:"([^"]+)"|(\S+))')
 
 
 class Plugin(list):
