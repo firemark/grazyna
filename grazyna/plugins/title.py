@@ -11,7 +11,7 @@ default_charset = 'utf-8'
 max_loop = 5
 timeout = 2
 max_bytes = 10240
-re_charset = re.compile(r"^[^;]+; +charset=([\w\-]+)")
+re_charset = re.compile(rb"< *meta +charset=([\"']?)([\w\s\_-]+)\1[^>]*>")
 re_space = re.compile(r'\s+')
 
 
@@ -27,11 +27,6 @@ class TitleParser(HTMLParser):
         if tag == "title":
             self.title_tag = True
             self.first = True
-        elif tag == "meta":
-            content = next((v for k, v in attrs if k == "content"), "")
-            charset = re_charset.search(content)
-            if charset:
-                self.charset = charset.group(1)
 
     def handle_data(self, data):
         if self.title_tag:
@@ -61,6 +56,7 @@ class TitleParser(HTMLParser):
             return re_space.sub(' ', unescape(title))
 
 
+
 def get_response(adress, method='GET', data=None, headers=None, redirect=True,
                  ssl=False, session=None):
     headers = headers or {}
@@ -80,11 +76,19 @@ def get_response(adress, method='GET', data=None, headers=None, redirect=True,
         return None
 
     raw = next(resp.iter_content(chunk_size=max_bytes))
-    resp.msg = raw.decode(resp.encoding or default_charset,
-                          errors='replace')
+    charset_match = re_charset.search(raw)
+    if charset_match:
+        charset = charset_match.group(2).decode()
+    else:
+        charset = resp.encoding or default_charset
+
+    try:
+        resp.msg = raw.decode(charset, errors='replace')
+    except LookupError:
+        return None
+
     resp.close()
     return resp
-
 
 
 @register(reg=r'http(s?)://(\S+)|(www\.\S+)')
