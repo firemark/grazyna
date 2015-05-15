@@ -11,7 +11,11 @@ default_charset = 'utf-8'
 max_loop = 5
 timeout = 2
 max_bytes = 10240
-re_charset = re.compile(rb"< *meta +charset=([\"']?)([\w\s\_-]+)\1[^>]*>")
+re_charsets = (
+    re.compile(rb"< *meta.+?charset=([\"']?)([\w\s\_-]+)\1[^>]*>"),
+    re.compile(
+        rb"< *meta.+?content=([\"']?)[^;]*; +charset=([\w\s\_-]+)\1[^>]*>"),
+)
 re_space = re.compile(r'\s+')
 
 
@@ -30,7 +34,7 @@ class TitleParser(HTMLParser):
 
     def handle_data(self, data):
         if self.title_tag:
-            self.title = data
+            self.title = (self.title or '') + data
 
     def handle_endtag(self, tag):
         if tag == "title":
@@ -38,7 +42,7 @@ class TitleParser(HTMLParser):
 
     @classmethod
     def get_title(cls, data):
-        parser = cls()
+        parser = cls(convert_charrefs=True)
 
         try:
             parser.feed(data)
@@ -76,11 +80,12 @@ def get_response(adress, method='GET', data=None, headers=None, redirect=True,
         return None
 
     raw = next(resp.iter_content(chunk_size=max_bytes))
-    charset_match = re_charset.search(raw)
-    if charset_match:
-        charset = charset_match.group(2).decode()
-    else:
-        charset = resp.encoding or default_charset
+    charset = resp.encoding or default_charset
+    for re_charset in re_charsets:
+        charset_match = re_charset.search(raw)
+        if charset_match:
+            charset = charset_match.group(2).decode()
+            break
 
     try:
         resp.msg = raw.decode(charset, errors='replace')
