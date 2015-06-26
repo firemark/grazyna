@@ -80,7 +80,7 @@ def rocket(bot, nick, n:range_int(0, 10)=3, chan:is_chan=None):
         return
 
     enemy = nick
-    if n == 0 or enemy == bot.config['nick']:
+    if n == 0 or enemy == bot.config['__nick__']:
         enemy = bot.user.nick
 
     @asyncio.coroutine
