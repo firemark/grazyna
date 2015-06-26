@@ -6,7 +6,7 @@ from ..utils.types import range_int, is_chan
 
 from ..config import create_config
 from sys import argv
-
+import asyncio
 
 @register(cmd='reload', admin_required=True)
 def reload(bot, module):
@@ -80,12 +80,16 @@ def rocket(bot, nick, n:range_int(0, 10)=3, chan:is_chan=None):
         return
 
     enemy = nick
-    if n == 0 or enemy == config.nick:
+    if n == 0 or enemy == bot.config['nick']:
         enemy = bot.user.nick
 
-    for i in range(n):
-        bot.say(str(n - i) + '...')
-        sleep(1)
-    bot.say('FIRE!')
-    sleep(1)
-    bot.time_ban(n * 2, why='Kaboom!', who=enemy, chan=chan)
+    @asyncio.coroutine
+    def timer(): 
+        for i in range(n):
+            bot.say(str(n - i) + '...')
+            yield from asyncio.sleep(1)
+        bot.say('FIRE!')
+        yield from asyncio.sleep(1)
+        bot.time_ban(n * 2, why='Kaboom!', who=enemy, chan=chan)
+        
+    asyncio.get_event_loop().run_until_complete(timer())
