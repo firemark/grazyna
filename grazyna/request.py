@@ -4,7 +4,6 @@ Created on 31-03-2013
 @author: firemark
 '''
 from asyncio import coroutine
-from . import config
 
 
 class RequestBot(object):
@@ -12,16 +11,18 @@ class RequestBot(object):
     Has useful informations as channel, nick
     and methods to communicate with user/channel"""
 
-    __slots__ = ('private', 'user', 'chan', 'protocol', 'config', 'plugin')
+    __slots__ = ('private', 'user', 'chan', 'protocol', 'config', 'plugin',
+                 'temp')
 
     def __init__(self, protocol, *, user=None, chan=None, private=False,
-                 config=None, plugin=None, db=None):
+                 config=None, plugin=None, temp=None):
         self.protocol = protocol
         self.private = private
         self.user = user
         self.chan = chan
         self.config = config
         self.plugin = plugin
+        self.temp = temp
 
     @coroutine
     def is_admin(self, nick=None):
@@ -45,7 +46,7 @@ class RequestBot(object):
 
     def kick(self, who=None, why='', chan=None):
         if not self.private:
-            self.protocol.kick(who or self.user.nick, self.chan, why)
+            self.protocol.kick(who or self.user.nick, chan or self.chan, why)
 
     def private_say(self, msg, nick=None):
         self.protocol.say(nick or self.user.nick, msg)
@@ -63,4 +64,4 @@ class RequestBot(object):
         chan = chan or self.chan
         prefix = prefix or "*!%s@%s" % (self.user.realname, self.user.host)
         who = who or self.user.nick
-        time_ban(time, who, chan, why, prefix)
+        self.protocol.time_ban(time, who, chan, why, prefix)

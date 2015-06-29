@@ -1,5 +1,6 @@
-import asyncio
 from .models import WhoisFuture
+
+import asyncio
 
 
 class IrcSender(object):
@@ -31,7 +32,7 @@ class IrcSender(object):
         self.say(chan or nick, msg)
 
     def kick(self, nick, chan, why=''):
-        self.send_msg('KICK', chan, nick, why)
+        self.send_msg('KICK', chan, nick, why or nick)
 
     def mode(self, chan, flag, arg):
         self.send('MODE', chan, flag, arg)
@@ -40,7 +41,7 @@ class IrcSender(object):
     def whois(self, nick):
         """
 
-        :param nick:
+        :type nick: str
         :return: WhoisData
         """
         self.whois_heap[nick] = future = WhoisFuture()
@@ -49,9 +50,25 @@ class IrcSender(object):
         return result
 
     def time_ban(self, time, nick, chan, why='', prefix=None):
+        """
+
+        :type time: int
+        :type nick: str
+        :type chan: str
+        :type why: str
+        :type prefix: str or NoneType
+        """
+
+        if time <= 0:
+            return
+
         prefix = prefix or nick + '!*@*'
         self.mode(chan, '+b', prefix)
         self.kick(nick, chan, why)
 
-        if time > -1:
-            Timer(time, lambda: self.mode(chan, '-b', prefix)).start()
+        @asyncio.coroutine
+        def timer():
+            yield from asyncio.sleep(time)
+            self.mode(chan, '-b', prefix)
+
+        asyncio.async(timer())

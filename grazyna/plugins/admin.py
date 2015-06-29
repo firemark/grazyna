@@ -92,4 +92,4 @@ def rocket(bot, nick, n:range_int(0, 10)=3, chan:is_chan=None):
         yield from asyncio.sleep(1)
         bot.time_ban(n * 2, why='Kaboom!', who=enemy, chan=chan)
         
-    asyncio.get_event_loop().run_until_complete(timer())
+    asyncio.async(timer())

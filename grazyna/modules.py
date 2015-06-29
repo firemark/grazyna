@@ -166,12 +166,15 @@ class ModuleManager(object):
     def get_plugin_cfg(self, name):
         cfg = self.config
         plugin_name = 'plugin:%s' % name
+        conf = {}
         if cfg.has_section(plugin_name):
-            conf = dict(cfg.items(plugin_name))
-            conf['__nick__'] = cfg.get('main', 'nick')
-            return conf
-        else:
-            return {}
+            conf.update(cfg.items(plugin_name))
+
+        conf.update(
+            __nick__=cfg.get('main', 'nick')
+        )
+
+        return conf
 
     def get_cmd_and_text(self, msg):
         cfg = self.config['main']
@@ -198,7 +201,8 @@ class ModuleManager(object):
             chan=channel if not private else None,
             config=self.get_plugin_cfg(plugin.name),
             plugin=plugin,
-            user=user
+            user=user,
+            temp=plugin.temp
         )
 
         try:
@@ -221,8 +225,11 @@ class ModuleManager(object):
             tb = traceback.format_exc().split('\n')[-4:-1]
             self.protocol.reply(
                 user.nick,
-                format.bold('ERR: ') + tb[2] +
-                format.color(tb[0], format.color.red),
+                '{} {} {}'.format(
+                    format.bold('ERR:'),
+                    tb[2],
+                    format.color(tb[0], format.color.red),
+                ),
                 channel
             )
 
