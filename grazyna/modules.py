@@ -109,7 +109,7 @@ class ModuleManager(object):
         self.execute_regs(msg, private, channel, user)
 
     def execute_command(self, cmd, text, private, channel, user):
-        plugin, func = self.find_command(cmd, private)
+        plugin, func = self.find_command(cmd, private, channel)
         if func is None:
             return
 
@@ -139,12 +139,35 @@ class ModuleManager(object):
             or (private and func.on_private)
         )
 
-    def find_command(self, cmd, private=None):
+    def find_command(self, cmd, private=None, channel=None):
+
+        def is_good(plugin, func):
+            cfg = self.get_plugin_cfg(plugin.name)
+
+            if func.cmd.format(**cfg) != cmd:
+                return False
+
+            if private or channel is None:
+                return True
+
+            def get_list(key):
+                return [
+                    x for x in (x.strip() for x in cfg.get(key, '').split(','))
+                    if x
+                ]
+
+            whitelist = get_list('whitelist')
+            if whitelist:
+                return channel in whitelist
+
+            blacklist = get_list('blacklist')
+            return channel not in blacklist
+
         return next(
             (
                 (plugin, func) for plugin, func
                 in self.get_commands(private)
-                if func.cmd.format(**self.get_plugin_cfg(plugin.name)) == cmd
+                if is_good(plugin, func)
             ),
             (None, None)
         )

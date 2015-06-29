@@ -15,7 +15,6 @@ create_help('ruletka', '.krec || .strzal')
 
 @register(cmd='krec', on_private=False)
 def play(bot):
-    print(bot.temp)
     if not bot.temp.get('on_play', False):
         bot.temp.update(
             cell=0,
