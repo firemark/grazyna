@@ -1,10 +1,13 @@
 #!/usr/bin/python3
 
+
 from ..utils import register
-import re
-import requests
-from requests.exceptions import RequestException
+
+from aiohttp import ClientError, ClientSession, TCPConnector
 from html.parser import HTMLParser, unescape
+
+import asyncio
+import re
 
 default_charset = 'utf-8'
 
@@ -60,27 +63,33 @@ class TitleParser(HTMLParser):
             return re_space.sub(' ', unescape(title))
 
 
-
-def get_response(adress, method='GET', data=None, headers=None, redirect=True,
+@asyncio.coroutine
+def get_response(address, headers=None, redirect=True,
                  ssl=False, session=None):
-    headers = headers or {}
 
     if session is None:
-        session = requests.Session()
+        session = ClientSession(
+            connector=TCPConnector(
+                verify_ssl=ssl,
+                conn_timeout=timeout
+            )
+        )
         session.max_redirects = max_loop
 
     try:
-        resp = session.request(
-            method, adress, timeout=timeout, headers=headers,
-            allow_redirects=redirect, verify=ssl, data=data)
-    except RequestException:
-        return None
+        resp = yield from session.get(
+            address,
+            #headers=headers,
+            allow_redirects=redirect
+        )
+    except ClientError:
+        return None, None
 
-    if resp.status_code != 200:
-        return None
+    if resp.status != 200:
+        return None, None
 
-    raw = next(resp.iter_content(chunk_size=max_bytes))
-    charset = resp.encoding or default_charset
+    raw = yield from resp.content.read(max_bytes)
+    charset = default_charset
     for re_charset in re_charsets:
         charset_match = re_charset.search(raw)
         if charset_match:
@@ -88,12 +97,28 @@ def get_response(adress, method='GET', data=None, headers=None, redirect=True,
             break
 
     try:
-        resp.msg = raw.decode(charset, errors='replace')
+        msg = raw.decode(charset, errors='replace')
     except LookupError:
-        return None
+        return None, None
 
     resp.close()
-    return resp
+    return msg, resp
+
+
+@asyncio.coroutine
+def check_title(bot, address, ssl):
+    msg, resp = yield from get_response(address, ssl)
+
+    if resp is None:
+        return
+
+    headers = resp.headers
+    if "content-type" in headers:
+        cont_type = headers["content-type"]
+        if cont_type.startswith("text/html") and msg:
+            title = TitleParser.get_title(msg)
+            if title:
+                bot.say("⚡ %s" % title)
 
 
 @register(reg=r'http(s?)://(\S+)|(www\.\S+)')
@@ -103,19 +128,4 @@ def title(bot, ssl: lambda s: s == 's', address, address_another):
     if not address.startswith('http'):
         address = "http://" + address
 
-    resp = get_response(address, ssl=ssl)
-
-    if resp is None:
-        return
-
-    headers = resp.headers
-    msg = resp.msg
-
-    if "content-type" in headers:
-        cont_type = headers["content-type"]
-        # print(cont_type)
-
-        if cont_type.startswith("text/html") and msg:
-            title = TitleParser.get_title(msg)
-            if title:
-                bot.say("⚡ %s" % title)
+    asyncio.async(check_title(bot, address, ssl))
