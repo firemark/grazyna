@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 here = os.path.abspath(os.path.dirname(__file__))
 
 requires = [
-    'requests==2.5.1'
+    'aiohttp==0.16.5'
 ]
 
 setup(
