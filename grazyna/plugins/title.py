@@ -1,6 +1,3 @@
-#!/usr/bin/python3
-
-
 from ..utils import register
 
 from aiohttp import ClientError, ClientSession, TCPConnector
