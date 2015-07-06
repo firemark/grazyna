@@ -8,6 +8,7 @@ import asyncio
 import re
 
 URL_API = 'http://api.openweathermap.org/data/2.5/forecast'
+URL_API_LONG = URL_API + '/daily'
 
 re_date = re.compile(r'([+-]?\d+)([dh])')
 
@@ -35,12 +36,23 @@ def weather(bot, city, day=None):
     dt = check_and_return_datetime(day)
     timestamp = dt.replace(tzinfo=timezone.utc).timestamp()
 
+    delta_days = (dt - datetime.now()).days
+    is_long_forecast = (delta_days > 5)
+
     def get_weather():
-        response = yield from request('GET', URL_API, params={
-            'q': city,
-            'units': 'metric',
-            'lang': 'pl'
-        })
+        if not is_long_forecast:
+            response = yield from request('GET', URL_API, params={
+                'q': city,
+                'units': 'metric',
+                'lang': 'pl'
+            })
+        else:
+            response = yield from request('GET', URL_API_LONG, params={
+                'q': city,
+                'units': 'metric',
+                'lang': 'pl',
+                'cnt': min(delta_days, 16)
+            })
         data_list = (yield from response.json())["list"]
         key = lambda x: abs(x['dt'] - timestamp)
         data = sorted(data_list, key=key)[0]
@@ -49,9 +61,23 @@ def weather(bot, city, day=None):
         except IndexError:
             weather = {'description': '', 'icon': ''}
 
+        if not is_long_forecast:
+            temperature = data['main']['temp']
+        else:
+            if dt.hour < 6:
+                period = 'night'
+            elif dt.hour < 10:
+                period = 'morn'
+            elif dt.hour < 18:
+                period = 'day'
+            elif dt.hour < 22:
+                period = 'eve'
+            else:
+                period = 'night'
+            temperature = data['temp'][period]
         bot.reply('{city}: {temp} °C {icon} {desc}'.format(
             city=format.bold(city),
-            temp=data['main']['temp'],
+            temp=temperature,
             desc=weather['description'],
             icon=ICON_TO_UTF.get(weather['icon'], '')
         ))
