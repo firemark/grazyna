@@ -89,7 +89,9 @@ def rocket(bot, nick, n:range_int(0, 10)=3, chan:is_chan=None):
             bot.say(str(n - i) + '...')
             yield from asyncio.sleep(1)
         bot.say('FIRE!')
+        whois = yield from bot.protocol.whois(enemy)
         yield from asyncio.sleep(1)
-        bot.time_ban(n * 2, why='Kaboom!', who=enemy, chan=chan)
+        prefix = "*!%s@%s" % (whois.realname or '*', whois.host or '*')
+        bot.time_ban(n * 2, why='Kaboom!', who=enemy, chan=chan, prefix=prefix)
         
     asyncio.async(timer())
