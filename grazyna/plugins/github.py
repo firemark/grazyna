@@ -1,8 +1,8 @@
 from ..utils.event_loop import loop
 from ..format import color, bold
 
-from datetime import datetime
 import requests
+import asyncio
 
 API_URL = "https://api.github.com/repos/{user}/{repo}/{action}"
 state_colors = {
