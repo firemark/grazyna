@@ -9,7 +9,9 @@ def create_help(cmd, txt):
     pass
 
 
-
+def init_plugin(func):
+    func.is_initial = True
+    return func
 
 class register(object):
     default_kwargs = {

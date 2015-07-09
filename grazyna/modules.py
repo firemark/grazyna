@@ -79,6 +79,14 @@ class ModuleManager(object):
             ]
         )
 
+        initials_funcs = (
+            func for func in module.__dict__.values()
+            if getattr(func, 'is_initial', False) is True
+        )
+
+        for initial_func in initials_funcs:
+            initial_func(plugin, self.protocol)
+
         future = plugin.future
         loops = [
             func(self.protocol, plugin, future)
