@@ -20,7 +20,7 @@ setup(
     url='https://github.com/firemark/grazyna',
     keywords='irc socket bot'.split(),
     packages=['grazyna'] + ['grazyna.' + p for p in find_packages('grazyna')],
-    package_data={'': ['default_config.ini']}
+    package_data={'': ['default_config.ini']},
     include_package_data=True,
     zip_safe=False,
     install_requires=requires,
