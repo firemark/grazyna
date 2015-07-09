@@ -19,6 +19,7 @@ def load_plugin(bot, module, name):
     bot.protocol.importer.load(name, module)
     bot.reply('Done!')
 
+
 @register(cmd='remove-plugin', admin_required=True)
 def remove_plugin(bot, name):
     bot.protocol.importer.remove(name)
@@ -26,9 +27,26 @@ def remove_plugin(bot, name):
 
 
 @register(cmd='reload-config', admin_required=True)
-def reload_config(bot):
+def reload_config(bot, reload_plugins='yes'):
     with open(argv[1]) as f:
         bot.protocol.config = create_config(f)
+
+    if reload_plugins != 'yes':
+        bot.reply('Done!')
+        return
+
+    importer = bot.protocol.importer
+    new_plugins = bot.protocol.config.items('plugins')
+    loaded_plugins = set(importer.plugins.keys())
+    plugins_to_remove = loaded_plugins - set(n for n, m in new_plugins)
+
+    for name in plugins_to_remove:
+        importer.remove(name)
+
+    for name, module in bot.protocol.config.items('plugins'):
+        if name not in loaded_plugins:
+            bot.protocol.importer.load(name, module)
+
     bot.reply('Done!')
 
 
