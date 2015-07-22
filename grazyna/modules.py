@@ -19,13 +19,14 @@ re_split = re.compile(r' *(?:(\w+)= *)?(?:"([^"]+)"|(\S+))')
 
 class Plugin(list):
 
-    __slots__ = ('temp', 'name', 'module_path', 'future')
+    __slots__ = ('temp', 'name', 'module_path', 'future', 'config')
 
     def __init__(self, name, module_path, funcs):
         super().__init__(funcs)
         self.temp = {}
         self.name = name
         self.module_path = module_path
+        self.config = {}
         self.future = Future()
 
     def __repr__(self):
@@ -78,6 +79,11 @@ class ModuleManager(object):
                 if getattr(obj, 'is_bot_event', False) is True
             ]
         )
+
+        cfg = self.config
+        plugin_name = 'plugin:%s' % name
+        if cfg.has_section(plugin_name):
+            plugin.config.update(cfg.items(plugin_name))
 
         initials_funcs = (
             func for func in module.__dict__.values()
@@ -196,11 +202,7 @@ class ModuleManager(object):
 
     def get_plugin_cfg(self, name):
         cfg = self.config
-        plugin_name = 'plugin:%s' % name
-        conf = {}
-        if cfg.has_section(plugin_name):
-            conf.update(cfg.items(plugin_name))
-
+        conf = self.plugins[name].config.copy()
         conf.update(
             __nick__=cfg.get('main', 'nick')
         )
