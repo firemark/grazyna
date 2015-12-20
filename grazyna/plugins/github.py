@@ -106,7 +106,11 @@ def github_action(action, plugin, config, sort_by='updated'):
         repo=config['repository'],
         action=action,
     )
-    query = {'sort': sort_by, 'direction': 'desc'}
+    query = {
+        'sort': sort_by,
+        'direction': 'desc',
+        'sha': config.get('branch', 'master')
+    }
     headers = {'Accept': 'application/vnd.github.v3+json'}
     etag = plugin.temp.get(action)
     if etag is not None:
