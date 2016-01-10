@@ -7,7 +7,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 requires = [
     'aiohttp==0.20.2',
     'dateparser==0.3.1',
-    'lxml==3.5.0'
+    'lxml==3.5.0',
 ]
 
 setup(
