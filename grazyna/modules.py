@@ -1,6 +1,6 @@
 from . import format
 
-from asyncio import async, coroutine, gather
+from asyncio import async, coroutine
 from asyncio.futures import Future
 
 from .request import RequestBot
@@ -118,10 +118,11 @@ class ModuleManager(object):
         private = channel[0] != "#"
 
         if cmd is not None:
-            self.execute_command(cmd, text, private, channel, user)
+            yield from self.execute_command(cmd, text, private, channel, user)
+        else:
+            yield from self.execute_regs(msg, private, channel, user)
 
-        self.execute_regs(msg, private, channel, user)
-
+    @coroutine
     def execute_command(self, cmd, text, private, channel, user):
         plugin, func = self.find_command(cmd, private, channel)
         if func is None:
@@ -133,15 +134,17 @@ class ModuleManager(object):
             args = []
             kwargs = {}
 
-        self.execute_func(func, plugin, private, channel, user, args, kwargs)
+        yield from self.execute_func(
+            func, plugin, private, channel, user, args, kwargs)
 
+    @coroutine
     def execute_regs(self, msg, private, channel, user):
         for plugin, func, matches in self.find_regs(msg, private):
             for match, _ in zip(matches, range(3)):
                 args = match.groups()
                 kwargs = match.groupdict()
-                self.execute_func(func, plugin, private, channel, user,
-                                  args, kwargs)
+                yield from self.execute_func(
+                    func, plugin, private, channel, user, args, kwargs)
 
     def find_function_in_plugin_with_name(self, private=None):
         return (
@@ -223,8 +226,8 @@ class ModuleManager(object):
         text = data[1] if len(data) > 1 else ""
         return cmd, text
 
+    @coroutine
     def execute_func(self, func, plugin, private, channel, user, args, kwargs):
-
         if func.block and self.is_blocked(user):
             return  # filtr antyspamowy, nienawidze was
 
@@ -240,10 +243,11 @@ class ModuleManager(object):
 
         try:
             dict_arg = check_type(args, kwargs, func)
-        except:
+        except Exception as e:
+            print(type(e), e)
             return
 
-        async(self._execute_func(func, bot, dict_arg, user, channel))
+        yield from self._execute_func(func, bot, dict_arg, user, channel)
 
     @coroutine
     def _execute_func(self, func, bot, args, user, channel):
@@ -252,8 +256,8 @@ class ModuleManager(object):
             if not is_admin:
                 return
         try:
-            func(bot, **args)
-        except:
+            yield from func(bot, **args)
+        except Exception:
             traceback.print_exc(file=sys.stdout)
             tb = traceback.format_exc().split('\n')[-4:-1]
             self.protocol.reply(
@@ -315,11 +319,12 @@ def get_args_from_text(text, max_args):
     return args, kwargs
 
 
-def check_type(args, kwargs, event):
-    dict_arg = getcallargs(event, None, *args, **kwargs)
+def check_type(args, kwargs, func):
+    real_func = getattr(func, '__wrapped__', func)
+    dict_arg = getcallargs(real_func, None, *args, **kwargs)
     for key, item in dict_arg.items():
-        arg_type = event.__annotations__.get(key, str)
-        if item != None:
+        arg_type = real_func.__annotations__.get(key, str)
+        if item is not None:
             dict_arg[key] = arg_type(item)
     del dict_arg['bot']
     return dict_arg

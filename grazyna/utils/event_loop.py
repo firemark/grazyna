@@ -1,11 +1,15 @@
 import asyncio
 import sys
 import traceback
+from functools import wraps
 from random import random
 
+
 def loop(time_config_key, default):
-    def outter(func):
+    def outter(old_func):
+        func = asyncio.coroutine(old_func)
         @asyncio.coroutine
+        @wraps(func)
         def inner(protocol, plugin, future):
             while True:
                 if future.cancelled():
@@ -19,7 +23,7 @@ def loop(time_config_key, default):
                     #special random delay
                     yield from asyncio.sleep(random() * 3)
                     try:
-                        func(protocol, plugin, cfg)
+                        yield from func(protocol, plugin, cfg)
                     except:
                         traceback.print_exc(file=sys.stdout)
 

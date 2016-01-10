@@ -1,6 +1,7 @@
 '''
 Useful decorators and function
 '''
+import asyncio
 import re
 import inspect
 
@@ -12,6 +13,7 @@ def create_help(cmd, txt):
 def init_plugin(func):
     func.is_initial = True
     return func
+
 
 class register(object):
     default_kwargs = {
@@ -57,15 +59,16 @@ class register(object):
 
         self.kwargs.update(kwargs)
 
-    def __call__(self, func):
+    def __call__(self, old_func):
+        func = asyncio.coroutine(old_func)
         func.__dict__.update(self.kwargs)
         func.is_bot_event = True
-        module_name = func.__module__.split('.')[-1]
+        module_name = old_func.__module__.split('.')[-1]
 
         func.name = '%s.%s' % (module_name, func.name or func.__name__.lower())
 
         if func.event == "msg":
-            argspec = inspect.getfullargspec(func)
+            argspec = inspect.getfullargspec(old_func)
             if argspec.args:  # count require argument
                 len_defaults = len(argspec.defaults) if argspec.defaults else 0
                 func.max_args = len(argspec.args) - len_defaults - 1
