@@ -38,51 +38,54 @@ def weather(bot, city, day=None):
 
     delta_days = (dt - datetime.now()).days
     is_long_forecast = (delta_days > 5)
+    if not is_long_forecast:
+        response = yield from request('GET', URL_API, params={
+            'q': city,
+            'units': 'metric',
+            'lang': 'pl',
+            'APPID': bot.config.get('app_id'),
+        })
+    else:
+        response = yield from request('GET', URL_API_LONG, params={
+            'q': city,
+            'units': 'metric',
+            'lang': 'pl',
+            'cnt': min(delta_days, 16),
+            'APPID': bot.config.get('app_id'),
+        })
+    try:
+        json_data = yield from response.json()
+    finally:
+        response.close()
+    if json_data.get('cod') == 401:
+        return
+    data_list = json_data["list"]
+    data = sorted(data_list, key=lambda x: abs(x['dt'] - timestamp))[0]
+    try:
+        weather = data['weather'][0]
+    except IndexError:
+        weather = {'description': '', 'icon': ''}
 
-    def get_weather():
-        if not is_long_forecast:
-            response = yield from request('GET', URL_API, params={
-                'q': city,
-                'units': 'metric',
-                'lang': 'pl'
-            })
+    if not is_long_forecast:
+        temperature = data['main']['temp']
+    else:
+        if dt.hour < 6:
+            period = 'night'
+        elif dt.hour < 10:
+            period = 'morn'
+        elif dt.hour < 18:
+            period = 'day'
+        elif dt.hour < 22:
+            period = 'eve'
         else:
-            response = yield from request('GET', URL_API_LONG, params={
-                'q': city,
-                'units': 'metric',
-                'lang': 'pl',
-                'cnt': min(delta_days, 16)
-            })
-        data_list = (yield from response.json())["list"]
-        key = lambda x: abs(x['dt'] - timestamp)
-        data = sorted(data_list, key=key)[0]
-        try:
-            weather = data['weather'][0]
-        except IndexError:
-            weather = {'description': '', 'icon': ''}
-
-        if not is_long_forecast:
-            temperature = data['main']['temp']
-        else:
-            if dt.hour < 6:
-                period = 'night'
-            elif dt.hour < 10:
-                period = 'morn'
-            elif dt.hour < 18:
-                period = 'day'
-            elif dt.hour < 22:
-                period = 'eve'
-            else:
-                period = 'night'
-            temperature = data['temp'][period]
-        bot.reply('{city}: {temp} °C {icon} {desc}'.format(
-            city=format.bold(city),
-            temp=temperature,
-            desc=weather['description'],
-            icon=ICON_TO_UTF.get(weather['icon'], '')
-        ))
-
-    asyncio.async(get_weather())
+            period = 'night'
+        temperature = data['temp'][period]
+    bot.reply('{city}: {temp} °C {icon} {desc}'.format(
+        city=format.bold(city),
+        temp=temperature,
+        desc=weather['description'],
+        icon=ICON_TO_UTF.get(weather['icon'], '')
+    ))
 
 
 def check_and_return_datetime(day):
