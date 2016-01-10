@@ -2,15 +2,15 @@ from ..utils import register
 
 from aiohttp import ClientError, ClientSession, TCPConnector
 from html.parser import HTMLParser, unescape
-
+from io import BytesIO
 import asyncio
 import re
 
 default_charset = 'utf-8'
 
-max_loop = 5
-timeout = 2
-max_bytes = 10240
+TIMEOUT = 2
+MAX_CHUNK_BYTES = 1024
+MAX_CHUNKS = 8
 re_charsets = (
     re.compile(rb"< *meta.+?charset=([\"']?)([\w\s\_-]+)\1[^>]*>"),
     re.compile(
@@ -43,19 +43,14 @@ class TitleParser(HTMLParser):
     @classmethod
     def get_title(cls, data):
         parser = cls(convert_charrefs=True)
-
         try:
             parser.feed(data)
-        except:  #many bugs lol
+        except:  # many bugs lol
             return None
-
         title = parser.title
-
         if title is None:
             return None
-
         title = title.strip()
-
         if title:
             return re_space.sub(' ', unescape(title))
 
@@ -63,29 +58,40 @@ class TitleParser(HTMLParser):
 @asyncio.coroutine
 def get_response(address, headers=None, redirect=True,
                  ssl=False, session=None):
-
-    if session is None:
-        session = ClientSession(
-            connector=TCPConnector(
-                verify_ssl=ssl,
-                conn_timeout=timeout
-            )
-        )
-        session.max_redirects = max_loop
-
+    """
+    :return: tuple of message and response
+    :rtype: (string, aiohttp.Request)
+    """
     try:
+        if session is None:
+            session = ClientSession(
+                connector=TCPConnector(
+                    verify_ssl=ssl,
+                    conn_timeout=TIMEOUT
+                )
+            )
         resp = yield from session.get(
             address,
-            #headers=headers,
+            headers=headers,
             allow_redirects=redirect
         )
+        try:
+            if resp.status != 200:
+                return None, None
+            raw_io = BytesIO()
+            for _ in range(MAX_CHUNKS):
+                chunk = yield from resp.content.read(MAX_CHUNK_BYTES)
+                if not chunk:
+                    break
+                raw_io.write(chunk)
+            raw = raw_io.getvalue()
+        finally:
+            resp.close()
     except ClientError:
         return None, None
+    finally:
+        session.close()
 
-    if resp.status != 200:
-        return None, None
-
-    raw = yield from resp.content.read(max_bytes)
     charset = default_charset
     for re_charset in re_charsets:
         charset_match = re_charset.search(raw)
@@ -97,14 +103,12 @@ def get_response(address, headers=None, redirect=True,
         msg = raw.decode(charset, errors='replace')
     except LookupError:
         return None, None
-
-    resp.close()
     return msg, resp
 
 
 @asyncio.coroutine
 def check_title(bot, address, ssl):
-    msg, resp = yield from get_response(address, ssl)
+    msg, resp = yield from get_response(address, ssl=ssl)
 
     if resp is None:
         return
@@ -125,4 +129,4 @@ def title(bot, ssl: lambda s: s == 's', address, address_another):
     if not address.startswith('http'):
         address = "http://" + address
 
-    asyncio.async(check_title(bot, address, ssl))
+    yield from check_title(bot, address, ssl)

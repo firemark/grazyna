@@ -1,8 +1,8 @@
-from ..utils.event_loop import loop
-from ..format import color, bold
-
-import requests
 import asyncio
+from aiohttp import ClientSession, ClientError
+from grazyna.utils.event_loop import loop
+from grazyna.format import color, bold
+
 
 API_URL = "https://api.github.com/repos/{user}/{repo}/{action}"
 state_colors = {
@@ -25,11 +25,15 @@ class NothingChangeException(Exception):
     pass
 
 
+POSSIBLE_EXCEPTIONS = (
+    ClientError, IndexError, NothingChangeException, asyncio.TimeoutError
+)
+
 @loop(time_config_key="commits_time", default=60)
 def commits(irc_protocol, plugin, config):
     try:
-        data = github_action('commits', plugin, config)
-    except (requests.HTTPError, NothingChangeException):
+        data = yield from github_action('commits', plugin, config)
+    except POSSIBLE_EXCEPTIONS:
         return
 
     msg = "‼ {commit} '{msg}' by {committer} {url}".format(
@@ -46,8 +50,8 @@ def commits(irc_protocol, plugin, config):
 @loop(time_config_key="events_time", default=60)
 def events(irc_protocol, plugin, config):
     try:
-        data = github_action('issues/events', plugin, config)
-    except (requests.HTTPError, IndexError, NothingChangeException):
+        data = yield from github_action('issues/events', plugin, config)
+    except POSSIBLE_EXCEPTIONS:
         return
 
     issue = data['issue']
@@ -73,8 +77,8 @@ def events(irc_protocol, plugin, config):
 @loop(time_config_key="comments_time", default=60)
 def comments(irc_protocol, plugin, config):
     try:
-        data = github_action('issues/comments', plugin, config)
-    except (requests.HTTPError, IndexError, NothingChangeException):
+        data = yield from github_action('issues/comments', plugin, config)
+    except POSSIBLE_EXCEPTIONS:
         return
 
     msg = "‼ {issue} by {nick} '{msg}' {url}".format(
@@ -98,7 +102,7 @@ def strip(msg):
     else:
         return line[:50] + "…"
 
-
+@asyncio.coroutine
 def github_action(action, plugin, config, sort_by='updated'):
     url = API_URL.format(
         api=API_URL,
@@ -116,9 +120,19 @@ def github_action(action, plugin, config, sort_by='updated'):
     if etag is not None:
         headers['If-None-Match'] = etag
 
-    req = requests.get(url, params=query, headers=headers, timeout=5)
-    req.raise_for_status()
-    plugin.temp[action] = req.headers.get('etag')
-    if req.status_code == 304 or etag is None:  # etag must be cached first
-        raise NothingChangeException(etag)
-    return req.json()[0]
+    session = ClientSession()
+    try:
+        resp = yield from asyncio.wait_for(
+            session.get(url, params=query, headers=headers),
+            timeout=5
+        )
+        try:
+            plugin.temp[action] = resp.headers.get('etag')
+            if resp.status != 200 or etag is None:  # etag must be cached first
+                raise NothingChangeException(etag)
+            data = yield from resp.json()
+        finally:
+            resp.close()
+    finally:
+        session.close()
+    return data[0]
