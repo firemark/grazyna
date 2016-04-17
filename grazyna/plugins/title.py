@@ -118,8 +118,11 @@ def check_title(bot, address, ssl):
         cont_type = headers["content-type"]
         if cont_type.startswith("text/html") and msg:
             title = TitleParser.get_title(msg)
-            if title:
-                bot.say("⚡ %s" % title)
+            if not title:
+                return
+            if title.startswith('Rick Astley'):
+                return
+            bot.say("⚡ %s" % title)
 
 
 @register(reg=r'http(s?)://(\S+)|(www\.\S+)')
