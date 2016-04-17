@@ -1,10 +1,9 @@
-from ..utils import register
-from .. import format
-from ..format import color
+from grazyna.utils import register
+from grazyna import format
+from grazyna.format import color
 from datetime import timedelta, datetime, timezone
 
 from aiohttp import request
-import asyncio
 import re
 
 URL_API = 'http://api.openweathermap.org/data/2.5/forecast'

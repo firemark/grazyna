@@ -102,6 +102,7 @@ def strip(msg):
     else:
         return line[:50] + "…"
 
+
 @asyncio.coroutine
 def github_action(action, plugin, config, sort_by='updated'):
     url = API_URL.format(
