@@ -2,19 +2,20 @@ from . import format
 
 from asyncio import async, coroutine
 from asyncio.futures import Future
+from grazyna.models import Message
 
 from .request import RequestBot
 from importlib import reload
 from collections import defaultdict
 from inspect import getcallargs
 from datetime import datetime, timedelta
+from sqlalchemy.sql.functions import func
 
 import re
 import traceback
 import sys
 
-#parse args
-re_split = re.compile(r' *(?:(\w+)= *)?(?:"([^"]+)"|(\S+))')
+re_split = re.compile(r' *(?:(\w+)= *)?(?:"([^"]+)"|(\S+))')  # parse args
 
 
 class Plugin(list):
@@ -126,16 +127,33 @@ class ModuleManager(object):
     def execute_command(self, cmd, text, private, channel, user):
         plugin, func = self.find_command(cmd, private, channel)
         if func is None:
+            if private:
+                return
+            yield from self.find_message_in_db(cmd, channel)
             return
 
-        if text:
-            args, kwargs = get_args_from_text(text, func.max_args)
-        else:
-            args = []
-            kwargs = {}
-
+        args, kwargs = get_args_from_text(text, func.max_args)
         yield from self.execute_func(
             func, plugin, private, channel, user, args, kwargs)
+
+
+    @coroutine
+    def find_message_in_db(self, cmd, channel):
+        if not self.protocol.db:
+            return
+        print(cmd, channel)
+        with self.protocol.get_session() as session:
+            row = (
+                session
+                    .query(Message.message)
+                    .filter_by(key=cmd, channel=channel)
+                    .order_by(func.random())
+                    .first()
+            )
+        if row is None:
+            return
+        return self.protocol.say(channel, row.message)
+
 
     @coroutine
     def execute_regs(self, msg, private, channel, user):
@@ -296,6 +314,8 @@ class ModuleManager(object):
 
 
 def get_args_from_text(text, max_args):
+    if not text:
+        return [], {}
     args = []
     kwargs = {}
     for arg_group in re_split.finditer(text):

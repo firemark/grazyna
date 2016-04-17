@@ -8,6 +8,8 @@ GOOGLE_URL = 'https://ajax.googleapis.com/ajax/services/search/web'
 
 @register(cmd='g')
 def google(bot, query):
+    """get first result of google query"""
+
     response = yield from request('GET', GOOGLE_URL, params={
         'q': query,
         'v': '1.0'

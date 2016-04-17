@@ -2,6 +2,7 @@
 
 import asyncio
 #import pyejdb
+from grazyna.db import get_engine, get_session
 import re
 import datetime
 
@@ -29,12 +30,10 @@ class IrcClient(asyncio.Protocol, IrcSender):
         IrcSender.__init__(self)
         asyncio.Protocol.__init__(self)
         self.config = config
-        #self.db = pyejdb.EJDB(
-        #    self.config.get('main', 'database_path'),
-        #    pyejdb.DEFAULT_OPEN_MODE | pyejdb.JBOTRUNC
-        #)
         self.importer = self.config.getmodule('main', 'importer')(self)
         self.importer.load_all()
+        if 'db_uri' in config['main']:
+            self.db = get_engine(config['main']['db_uri'])
         self.connection_lost_future = connection_lost_future
 
     def connection_made(self, transport):
@@ -52,6 +51,10 @@ class IrcClient(asyncio.Protocol, IrcSender):
     def connection_lost(self, exc):
         self.connection_lost_future.set_exception(exc)
         self.importer.cancel_tasks()
+
+    def get_session(self):
+        session = get_session(self.db)
+        return session.scope()
 
     @staticmethod
     def _parse_raw_messages(raw_messages, codecs=('utf-8',)):

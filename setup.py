@@ -7,13 +7,14 @@ here = os.path.abspath(os.path.dirname(__file__))
 requires = [
     'aiohttp==0.20.2',
     'dateparser==0.3.1',
+    'SQLAlchemy==1.0.12',
     'lxml>=3.3.0',
 ]
 
 setup(
     name='grazyna',
-    version='0.5.5.1',
-    download_url='https://github.com/firemark/grazyna/tarball/0.5.5.1',
+    version='0.5.5.2',
+    download_url='https://github.com/firemark/grazyna/tarball/0.5.5.2',
     description='Grazyna The irc bot',
     long_description='Grazyna The irc bot',
     classifiers=[],
