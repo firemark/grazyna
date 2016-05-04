@@ -115,17 +115,23 @@ def check_title(bot, address, ssl):
         return
 
     headers = resp.headers
-    if "content-type" in headers:
-        cont_type = headers["content-type"]
-        if cont_type.startswith("text/html") and msg:
-            title = TitleParser.get_title(msg)
-            if not title:
-                return
-            if title.startswith('Rick Astley'):
-                title = 'Funny %s - YouTube' % choice((
-                    'cats', 'dogs', 'firemark'
-                ))
-            bot.say("⚡ %s" % title)
+    if "content-type" not in headers:
+        return
+    cont_type = headers["content-type"]
+    if not cont_type.startswith("text/html"):
+        return
+    if not msg:
+        return
+
+    title = TitleParser.get_title(msg)
+
+    if not title:
+        return
+    if title.startswith('Rick Astley'):
+        title = 'Funny %s - YouTube' % choice((
+            'cats', 'dogs', 'firemark'
+        ))
+    bot.say("⚡ %s" % title)
 
 
 @register(reg=r'http(s?)://(\S+)|(www\.\S+)')
