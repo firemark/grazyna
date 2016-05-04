@@ -1,3 +1,4 @@
+from random import choice
 from ..utils import register
 
 from aiohttp import ClientError, ClientSession, TCPConnector
@@ -121,7 +122,9 @@ def check_title(bot, address, ssl):
             if not title:
                 return
             if title.startswith('Rick Astley'):
-                return
+                title = 'Funny %s - YouTube' % choice((
+                    'cats', 'dogs', 'firemark'
+                ))
             bot.say("⚡ %s" % title)
 
 
