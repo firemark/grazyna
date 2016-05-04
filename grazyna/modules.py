@@ -175,37 +175,37 @@ class ModuleManager(object):
         )
 
     def find_command(self, cmd, private=None, channel=None):
-
-        def is_good(plugin, func):
-            cfg = self.get_plugin_cfg(plugin.name)
-
-            if func.cmd.format(**cfg) != cmd:
-                return False
-
-            if private or channel is None:
-                return True
-
-            def get_list(key):
-                return [
-                    x for x in (x.strip() for x in cfg.get(key, '').split(','))
-                    if x
-                ]
-
-            whitelist = get_list('whitelist')
-            if whitelist:
-                return channel in whitelist
-
-            blacklist = get_list('blacklist')
-            return channel not in blacklist
-
         return next(
             (
                 (plugin, func) for plugin, func
                 in self.get_commands(private)
-                if is_good(plugin, func)
+                if self.cmd_is_good(plugin, func, cmd, private, channel)
             ),
             (None, None)
         )
+
+    def cmd_is_good(self, plugin, func, cmd=None, private=False, channel=None):
+        cfg = self.get_plugin_cfg(plugin.name)
+
+        if cmd is not None and func.cmd.format(**cfg) != cmd:
+            return False
+
+        if private or channel is None:
+            return True
+
+        def get_list(key):
+            return [
+                x for x in (x.strip() for x in cfg.get(key, '').split(','))
+                if x
+            ]
+
+        whitelist = get_list('whitelist')
+        if whitelist:
+            return channel in whitelist
+
+        blacklist = get_list('blacklist')
+        return channel not in blacklist
+
 
     def get_commands(self, private=None):
         return (

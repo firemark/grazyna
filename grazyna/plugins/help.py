@@ -37,17 +37,24 @@ def cmd_args(bot, name):
         )
     )
 
+
 @register(cmd='source')
 def source(bot):
     bot.say('https://github.com/firemark/grazyna')
 
 
 def show_commands(bot, importer):
+    private = bot.private
     bot.say(
         ', '.join(
             func.cmd.format(**importer.get_plugin_cfg(plugin.name))
-            for plugin, func in importer.get_commands()
+            for plugin, func in importer.get_commands(private=private)
             if not func.admin_required
+            and importer.cmd_is_good(
+                plugin, func,
+                private=private,
+                channel=bot.chan,
+            )
         )
     )
 
@@ -60,21 +67,3 @@ def show_command_help(bot, importer, name):
     cmd = func.cmd.format(**importer.get_plugin_cfg(plugin.name))
     doc = re.sub('\s+', ' ', func.__doc__) if func.__doc__ else 'help not found'
     bot.say('{}: {}'.format(format.bold(cmd), doc))
-
-
-
-#class commands(Plugin):
-#    reg = r'^\.commands'
-#    help = '.commands'
-#    name = 'commands'
-#
-#    def use(self, input):
-#        cmds = []
-#        for module in modules.values():
-#            cmds += [
-#                      plugin.name
-#                      for _, plugin in module
-#                      if plugin.help
-#                      ]
-#            cmds.sort()
-#        self.say(format.bold('commands: ') + ', '.join(cmds) )
