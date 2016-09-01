@@ -58,7 +58,10 @@ def weather(bot, city, day=None):
         response.close()
     if json_data.get('cod') == 401:
         return
-    data_list = json_data["list"]
+    data_list = json_data.get("list")
+    if data_list is None:
+        bot.reply('404 lol')
+        return
     data = sorted(data_list, key=lambda x: abs(x['dt'] - timestamp))[0]
     try:
         weather = data['weather'][0]

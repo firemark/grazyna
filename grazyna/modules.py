@@ -141,7 +141,6 @@ class ModuleManager(object):
     def find_message_in_db(self, cmd, channel):
         if not self.protocol.db:
             return
-        print(cmd, channel)
         with self.protocol.get_session() as session:
             row = (
                 session

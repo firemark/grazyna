@@ -17,7 +17,7 @@ def google(bot, query):
     json_data = yield from response.json()
     data = json_data['responseData']
     if data is None:
-        bot.reply(response['responseDetails'])
+        bot.reply(json_data['responseDetails'])
         return
     try:
         result = data['results'][0]

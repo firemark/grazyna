@@ -1,6 +1,7 @@
 #!/usr/bin/python3
-from ..utils import register
-from .. import format
+from grazyna.utils import register
+from grazyna.models import Message
+from grazyna import format
 
 from inspect import getfullargspec
 import re
@@ -45,18 +46,24 @@ def source(bot):
 
 def show_commands(bot, importer):
     private = bot.private
-    bot.say(
-        ', '.join(
-            func.cmd.format(**importer.get_plugin_cfg(plugin.name))
-            for plugin, func in importer.get_commands(private=private)
-            if not func.admin_required
-            and importer.cmd_is_good(
-                plugin, func,
-                private=private,
-                channel=bot.chan,
-            )
+    commands = [
+        func.cmd.format(**importer.get_plugin_cfg(plugin.name))
+        for plugin, func in importer.get_commands(private=private)
+        if not func.admin_required
+        and importer.cmd_is_good(
+            plugin, func,
+            private=private,
+            channel=bot.chan,
         )
-    )
+    ]
+    with bot.protocol.get_session() as session:
+        commands += list(
+            session.query(Message.key)
+            .filter(Message.channel == channel)
+            .order_by(Message.key)
+            .all()
+        )
+    bot.say(', '.join(commands))
 
 
 def show_command_help(bot, importer, name):

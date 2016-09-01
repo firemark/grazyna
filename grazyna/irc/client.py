@@ -18,7 +18,6 @@ re_message = re.compile(
 
 
 class IrcClient(asyncio.Protocol, IrcSender):
-
     ready = False
     config = None
     importer = None
