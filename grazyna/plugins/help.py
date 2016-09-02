@@ -61,6 +61,7 @@ def show_commands(bot, importer):
             session.query(Message.key)
             .filter(Message.channel == bot.chan)
             .order_by(Message.key)
+            .group_by(Message.key)
             .all()
         )]
     bot.say(', '.join(commands))
