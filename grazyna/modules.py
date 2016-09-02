@@ -16,6 +16,7 @@ import traceback
 import sys
 
 re_split = re.compile(r' *(?:(\w+)= *)?(?:"([^"]+)"|(\S+))')  # parse args
+re_db_args = re.compile(r'(^|[^$])\$(@|\d+)')
 
 
 class Plugin(list):
@@ -129,7 +130,7 @@ class ModuleManager(object):
         if func is None:
             if private:
                 return
-            yield from self.find_message_in_db(cmd, channel)
+            yield from self.find_message_in_db(cmd, channel, text)
             return
 
         args, kwargs = get_args_from_text(text, func.max_args)
@@ -138,7 +139,7 @@ class ModuleManager(object):
 
 
     @coroutine
-    def find_message_in_db(self, cmd, channel):
+    def find_message_in_db(self, cmd, channel, text):
         if not self.protocol.db:
             return
         with self.protocol.get_session() as session:
@@ -151,8 +152,28 @@ class ModuleManager(object):
             )
         if row is None:
             return
-        return self.protocol.say(channel, row.message)
 
+        msg = row.message
+        max_args = max(
+            (
+                int(m) + 1 if m.isnumeric() else 0
+                for m in (m.group(2) for m in re_db_args.finditer(msg))
+            ), default=0
+        )
+        args, kwargs = get_args_from_text(text, max_args)
+
+        def replace_dollars(match):
+            val = match.group(2)
+            if val == '@':
+                return text
+            return match.group(1) + args[int(val)]
+
+        try:
+            msg = re_db_args.sub(replace_dollars, msg)
+        except IndexError:
+            return
+
+        return self.protocol.say(channel, msg)
 
     @coroutine
     def execute_regs(self, msg, private, channel, user):
@@ -312,7 +333,7 @@ class ModuleManager(object):
             return False
 
 
-def get_args_from_text(text, max_args):
+def get_args_from_text(text, max_args=-1):
     if not text:
         return [], {}
     args = []
@@ -324,10 +345,9 @@ def get_args_from_text(text, max_args):
         if arg_name:
             kwargs[arg_name] = arg
         else:
-            if max_args > -1:
-                args.append(arg)
+            args.append(arg)
 
-    if len(args) > max_args != -1:
+    if len(args) > max_args and max_args != -1:
         last_arg = ' '.join(args[max_args:])
         args = args[0:max_args]
         try:

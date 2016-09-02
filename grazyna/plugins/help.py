@@ -57,12 +57,12 @@ def show_commands(bot, importer):
         )
     ]
     with bot.protocol.get_session() as session:
-        commands += list(
+        commands += [msg.key for msg in (
             session.query(Message.key)
-            .filter(Message.channel == channel)
+            .filter(Message.channel == bot.chan)
             .order_by(Message.key)
             .all()
-        )
+        )]
     bot.say(', '.join(commands))
 
 

@@ -15,11 +15,11 @@ def add_cmd(bot, key, message):
     bot.reply('Done!')
 
 
-# @register(cmd='del', on_private=False)
-# TODO: write blacklist/whitelist for users
+@register(cmd='del', on_private=False, admin_required=True)
 def delete_cmd(bot, key):
     if not bot.protocol.db:
         return
     with bot.protocol.get_session() as session:
         session.query(Message).filter_by(key=key, channel=bot.chan).delete()
     bot.reply('Done!')
+
