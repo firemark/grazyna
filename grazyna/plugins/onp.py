@@ -73,6 +73,11 @@ def onp(bot, tasks, round:range_int(0)=3):
     bot.say("Result: %s" % score)
 
 
+@register(cmd="rpn")
+def rpn(bot, tasks, round:range_int(0)=3):
+    yield from onp(bot, tasks, round)
+
+
 def calc(tasks, round_num=3):
     buffer = []
     for task in tasks:
