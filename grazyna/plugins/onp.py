@@ -1,39 +1,65 @@
 #!/usr/bin/python3
 
-from ..utils import create_help, register
+from grazyna.utils import create_help, register
+from grazyna.utils.types import range_int
+from grazyna import format
+
 from math import isnan
-from random import random
-from ..utils.types import range_int
-from .. import format
+from random import random, randint
+from collections import namedtuple
+from functools import wraps
+
 import operator
 import math
 
 special_vars = {
     'pi': math.pi,
-    'e': math.e
+    'e': math.e,
 }
+
+def reverse_func(func):
+    @wraps(func)
+    def inner(*args):
+        return func(*args[::-1])
+    return inner
+
 
 operator_funcs = {
-    '+': operator.add,
-    '-': operator.sub,
-    '/': operator.truediv,
-    '*': operator.mul,
-    '%': operator.mod,
-    '^': operator.pow,
-    '=': operator.eq,
-    '>': operator.gt,
-    '<': operator.lt,
-    '&': lambda a, b: bool(a) and bool(b),
-    '|': lambda a, b: bool(a) or bool(b),
-}
+    #'op': (num, func),
+    '+': (2, operator.add),
+    '-': (2, operator.sub),
+    '/': (2, operator.truediv),
+    '//': (2, operator.floordiv),
+    '%': (2, operator.mod),
+    '*': (2, operator.mul),
+    '**': (2, operator.pow),
 
-one_var_operator_funcs = {
-    '~': lambda a: not bool(a),
-    'sin': math.sin,
-    'cos': math.cos,
-    'log': math.log,
-    'log10': math.log10,
-    'log2': math.log2,
+    '=': (2, operator.eq),
+    '>': (2, operator.gt),
+    '<': (2, operator.lt),
+
+    '&': (2, lambda a, b: bool(a) and bool(b)),
+    '|': (2, lambda a, b: bool(a) or bool(b)),
+    '^': (2, lambda a, b: bool(a) ^ bool(b)),
+
+    '!': (1, lambda a: not bool(a)),
+    '~': (1, lambda a: -a),
+
+    '~-': (2, reverse_func(operator.sub)),
+    '~/': (2, reverse_func(operator.truediv)),
+    '~//': (2, reverse_func(operator.floordiv)),
+    '~%': (2, reverse_func(operator.mod)),
+    '~**': (2, reverse_func(operator.pow)),
+
+    'sin': (1, math.sin),
+    'cos': (1, math.cos),
+    'log': (1, math.log),
+    'tan': (1, math.tan),
+    'log10': (1, math.log10),
+    'log2': (1, math.log2),
+
+    '?': (0, random),
+    '??': (2, lambda a, b: randint(int(a), int(b))),
 }
 
 
@@ -75,28 +101,27 @@ def get_number(task):
     try:
         return float(task)
     except ValueError:
-        try:
-            return special_vars[task]
-        except KeyError:
-            return None
+        return special_vars.get(task)
 
 
 def execute(op, buffer):
-    func = operator_funcs.get(op)
-    if func is None:
-        func = one_var_operator_funcs.get(op)
-        try:
-            args = [buffer.pop()]
-        except IndexError:
+    try:
+        len_args, func = operator_funcs[op]
+    except KeyError:
+        return 'WTF - %s is not a good operator' % op
+
+    if len_args > 0:
+        args = buffer[-len_args:]
+        if len(args) != len_args:
             return "WTF"
+        del buffer[-len_args:]
     else:
-        try:
-            args = [buffer.pop(), buffer.pop()]
-        except IndexError:
-            return "WTF"
+        args = []
+
     try:
         value = func(*args)
     except OverflowError:
         return format.bold("Over 9000!!")
     else:
         buffer.append(value)
+
