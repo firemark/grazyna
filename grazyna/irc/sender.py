@@ -13,7 +13,8 @@ class IrcSender(object):
 
     def send(self, *args):
         string = ' '.join(
-            str(arg).replace('\r\n', '') for arg in args
+            str(arg).replace('\r', '').replace('\n', '')
+            for arg in args
         )[:510] + '\r\n'
         self.transport.write(string.encode())
 

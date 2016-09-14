@@ -165,7 +165,7 @@ class ModuleManager(object):
         def replace_dollars(match):
             val = match.group(2)
             if val == '@':
-                return text
+                return match.group(1) + text
             return match.group(1) + args[int(val)]
 
         try:
