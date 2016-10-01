@@ -1,11 +1,17 @@
-from random import choice
-from ..utils import register
+# -*- coding: utf-8 -*-
+# vi:si:et:sw=4:sts=4:ts=4
 
-from aiohttp import ClientError, ClientSession, TCPConnector
-from html.parser import HTMLParser, unescape
-from io import BytesIO
 import asyncio
 import re
+import string
+from html.parser import HTMLParser, unescape
+from io import BytesIO
+from random import choice
+
+from aiohttp import ClientError, ClientSession, TCPConnector
+
+from ..utils import register
+
 
 default_charset = 'utf-8'
 
@@ -138,6 +144,8 @@ def check_title(bot, address, ssl):
 def title(bot, ssl: lambda s: s == 's', address, address_another):
     address = address or address_another
 
+    # ensure that characters like \x01 are removed
+    address = "".join([char for char in address if char in string.printable])
     if not address.startswith('http'):
         address = "http://" + address
 
