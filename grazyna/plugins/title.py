@@ -113,8 +113,17 @@ def get_response(address, headers=None, redirect=True,
     return msg, resp
 
 
+def address_in_blacklist(address, blacklist):
+    for entry in blacklist:
+        if address.startswith(entry):
+            return True
+
+
 @asyncio.coroutine
 def check_title(bot, address, ssl):
+    if address_in_blacklist(address, bot.config.values()):
+        return
+
     msg, resp = yield from get_response(address, ssl=ssl)
 
     if resp is None:
