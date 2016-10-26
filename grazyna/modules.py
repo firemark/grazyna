@@ -194,23 +194,23 @@ class ModuleManager(object):
             or (private and func.on_private)
         )
 
-    def find_command(self, cmd, private=None, channel=None):
+    def find_command(self, cmd, private=None, channel=None, user=None):
         return next(
             (
                 (plugin, func) for plugin, func
                 in self.get_commands(private)
-                if self.cmd_is_good(plugin, func, cmd, private, channel)
+                if self.cmd_is_good(plugin, func, cmd, private, channel, user)
             ),
             (None, None)
         )
 
-    def cmd_is_good(self, plugin, func, cmd=None, private=False, channel=None):
+    def cmd_is_good(self, plugin, func, cmd=None, private=False, channel=None, user=None):
         cfg = self.get_plugin_cfg(plugin.name)
 
         if cmd is not None and func.cmd.format(**cfg) != cmd:
             return False
 
-        if private or channel is None:
+        if private is not False and channel is None:
             return True
 
         def get_list(key):
