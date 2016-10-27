@@ -9,12 +9,13 @@ requires = [
     'dateparser==0.3.1',
     'SQLAlchemy==1.0.12',
     'lxml>=3.3.0',
+    'pytest==3.0.3',
 ]
 
 setup(
     name='grazyna',
-    version='0.6.6',
-    download_url='https://github.com/firemark/grazyna/tarball/0.6.4',
+    version='0.6.7',
+    download_url='https://github.com/firemark/grazyna/tarball/0.6.7',
     description='Grazyna The irc bot',
     long_description='Grazyna The irc bot',
     classifiers=[],

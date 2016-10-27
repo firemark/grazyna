@@ -16,6 +16,7 @@ import traceback
 import sys
 
 re_split = re.compile(r' *(?:(\w+)= *)?(?:"([^"]+)"|(\S+))')  # parse args
+re_channel_list = re.compile(r'([\w#^-]+|\*){([^}]+)}')
 re_db_args = re.compile(r'(^|[^$])\$(@|\d+)')
 
 
@@ -48,7 +49,6 @@ class ExecutedCounter(object):
 
 
 class ModuleManager(object):
-
     protocol = None
     plugins = None
     executed_counters = None
@@ -126,7 +126,7 @@ class ModuleManager(object):
 
     @coroutine
     def execute_command(self, cmd, text, private, channel, user):
-        plugin, func = self.find_command(cmd, private, channel)
+        plugin, func = yield from self.find_command(cmd, private, channel, user)
         if func is None:
             if private:
                 return
@@ -178,9 +178,14 @@ class ModuleManager(object):
     @coroutine
     def execute_regs(self, msg, private, channel, user):
         for plugin, func, matches in self.find_regs(msg, private):
-            for match, _ in zip(matches, range(3)):
-                args = match.groups()
-                kwargs = match.groupdict()
+            match = next(matches, None)
+            if match is None:
+                return
+            args = match.groups()
+            kwargs = match.groupdict()
+            cfg = self.get_plugin_cfg(plugin.name)
+            is_good = (yield from self.check_white_black_lists(cfg, channel, user))
+            if is_good:
                 yield from self.execute_func(
                     func, plugin, private, channel, user, args, kwargs)
 
@@ -194,16 +199,17 @@ class ModuleManager(object):
             or (private and func.on_private)
         )
 
+    @coroutine
     def find_command(self, cmd, private=None, channel=None, user=None):
-        return next(
-            (
-                (plugin, func) for plugin, func
-                in self.get_commands(private)
-                if self.cmd_is_good(plugin, func, cmd, private, channel, user)
-            ),
-            (None, None)
-        )
+        for plugin, func in self.get_commands(private):
+            is_good = yield from self.cmd_is_good(
+                plugin, func, cmd, private, channel, user
+            )
+            if is_good:
+                return plugin, func
+        return None, None
 
+    @coroutine
     def cmd_is_good(self, plugin, func, cmd=None, private=False, channel=None, user=None):
         cfg = self.get_plugin_cfg(plugin.name)
 
@@ -213,19 +219,39 @@ class ModuleManager(object):
         if private is not False and channel is None:
             return True
 
-        def get_list(key):
-            return [
-                x for x in (x.strip() for x in cfg.get(key, '').split(','))
+        return (yield from self.check_white_black_lists(cfg, channel, user))
+
+    @coroutine
+    def check_white_black_lists(self, cfg, channel, user):
+        @coroutine
+        def seek_in_list(list_name):
+            keys = [
+                x for x in (x.strip() for x in cfg.get(list_name, '').split(','))
                 if x
             ]
+            if not keys:
+                return None
+            whois = None
+            for key in keys:
+                match = re_channel_list.match(key)
+                if match is None:
+                    if key == channel:
+                        return True
+                    continue
+                key, raw_nicks = match.groups()
+                if key not in ('*', channel):
+                    continue
+                whois = whois or (yield from self.protocol.whois(user.nick))
+                nicks = [nick.strip() for nick in raw_nicks.split(';')]
+                if (whois.account or '').strip() in nicks:
+                    return True
+            return False
 
-        whitelist = get_list('whitelist')
-        if whitelist:
-            return channel in whitelist
-
-        blacklist = get_list('blacklist')
-        return channel not in blacklist
-
+        is_in_whitelist = yield from seek_in_list('whitelist')
+        if is_in_whitelist is not None:
+            return is_in_whitelist
+        is_in_blacklist = yield from seek_in_list('blacklist')
+        return not is_in_blacklist
 
     def get_commands(self, private=None):
         return (
@@ -289,10 +315,6 @@ class ModuleManager(object):
 
     @coroutine
     def _execute_func(self, func, bot, args, user, channel):
-        if func.admin_required:
-            is_admin = yield from bot.is_admin()
-            if not is_admin:
-                return
         try:
             yield from func(bot, **args)
         except Exception:

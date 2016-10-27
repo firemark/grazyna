@@ -1,5 +1,9 @@
 from grazyna.modules import ModuleManager
+from grazyna.irc.models import User, WhoisData
 from unittest.mock import Mock, patch
+
+import asyncio
+import pytest
 
 
 def create_func(cmd='test'):
@@ -11,8 +15,12 @@ def create_func(cmd='test'):
     return func_test
 
 
-def cmd_is_good(cfg, func, cmd=None, private=False, channel=None, user=None):
+def cmd_is_good(cfg, func, cmd=None, private=False, channel=None, user=None, whois=None):
     protocol = Mock(name='protocol')
+    @asyncio.coroutine
+    def whois_func(nick):
+        return whois
+    protocol.whois = whois_func
     plugin = Mock(name='plugin')
     plugin.name = 'test'
     mm = ModuleManager(protocol)
@@ -20,64 +28,99 @@ def cmd_is_good(cfg, func, cmd=None, private=False, channel=None, user=None):
     return mm.cmd_is_good(plugin, func, cmd, private, channel, user)
 
 
+@pytest.mark.asyncio
 def test__wrong_cmd():
-    assert not cmd_is_good(
+    assert not (yield from cmd_is_good(
         cfg={},
         func=create_func(cmd='wrong_cmd'),
         cmd='correct_cmd',
-    )
+    ))
 
 
+@pytest.mark.asyncio
 def test__wrong_formatted_cmd():
-    assert not cmd_is_good(
+    assert not (yield from cmd_is_good(
         cfg={'foo': 'bar'},
         func=create_func(cmd='cmd_{foo}'),
         cmd='cmd_foo',
-    )
+    ))
 
 
+@pytest.mark.asyncio
 def test__cmd_is_private():
-    assert cmd_is_good(
+    assert (yield from cmd_is_good(
         cfg={'foo': 'bar'},
         func=create_func(cmd='cmd_{foo}'),
         cmd='cmd_bar',
         private=True,
         channel=None,
-    )
+    ))
 
 
+@pytest.mark.asyncio
 def test__channel_in_whitelist():
-    assert cmd_is_good(
+    assert (yield from cmd_is_good(
         cfg={'whitelist': '#bar,#foo'},
         func=create_func(cmd='cmd'),
         cmd='cmd',
         channel='#bar',
-    )
+    ))
 
 
+@pytest.mark.asyncio
 def test__channel_not_in_whitelist():
-    assert not cmd_is_good(
-        cfg={'whitelist': 'bar,foo'},
+    assert not (yield from cmd_is_good(
+        cfg={'whitelist': '#bar,#foo'},
         func=create_func(cmd='cmd'),
         cmd='cmd',
         channel='#barfoo',
-    )
+    ))
 
 
+@pytest.mark.asyncio
 def test__channel_in_blacklist():
-    assert not cmd_is_good(
+    assert not (yield from cmd_is_good(
         cfg={'blacklist': '#bar,#foo'},
         func=create_func(cmd='cmd'),
         cmd='cmd',
         channel='#foo',
-    )
+    ))
 
 
+@pytest.mark.asyncio
 def test__channel_not_in_blacklist():
-    assert cmd_is_good(
+    assert (yield from cmd_is_good(
         cfg={'blacklist': '#bar,#foo'},
         func=create_func(cmd='cmd'),
         cmd='cmd',
         channel='#barfoo',
-    )
+    ))
+
+
+@pytest.mark.asyncio
+def test__user_and_channel_in_whitelist():
+    whois = WhoisData()
+    whois.account = 'FooNick'
+    assert (yield from cmd_is_good(
+        cfg={'whitelist': '#foo{FooNick;BarNick},#bar'},
+        func=create_func(cmd='cmd'),
+        cmd='cmd',
+        channel='#foo',
+        user=User('foo!foo@foo'),
+        whois=whois
+    ))
+
+
+@pytest.mark.asyncio
+def test__user_in_whitelist():
+    whois = WhoisData()
+    whois.account = 'BarNick'
+    assert (yield from cmd_is_good(
+        cfg={'whitelist': '*{FooNick;BarNick},#foobar'},
+        func=create_func(cmd='cmd'),
+        cmd='cmd',
+        channel='#bar',
+        user=User('foo!foo@foo'),
+        whois=whois,
+    ))
 
