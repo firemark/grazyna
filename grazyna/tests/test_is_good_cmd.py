@@ -102,7 +102,7 @@ def test__user_and_channel_in_whitelist():
     whois = WhoisData()
     whois.account = 'FooNick'
     assert (yield from cmd_is_good(
-        cfg={'whitelist': '#foo{FooNick;BarNick},#bar'},
+        cfg={'whitelist': '#bar,#foobar{Barnick},#foo{FooNick;BarNick}'},
         func=create_func(cmd='cmd'),
         cmd='cmd',
         channel='#foo',
@@ -116,7 +116,7 @@ def test__user_in_whitelist():
     whois = WhoisData()
     whois.account = 'BarNick'
     assert (yield from cmd_is_good(
-        cfg={'whitelist': '*{FooNick;BarNick},#foobar'},
+        cfg={'whitelist': '#foobar,#barfoo{FooNick},*{FooNick;BarNick}'},
         func=create_func(cmd='cmd'),
         cmd='cmd',
         channel='#bar',
@@ -124,3 +124,15 @@ def test__user_in_whitelist():
         whois=whois,
     ))
 
+@pytest.mark.asyncio
+def test__user_and_channel_in_blacklist():
+    whois = WhoisData()
+    whois.account = 'BarNick'
+    assert not (yield from cmd_is_good(
+        cfg={'whitelist': '#foobar,#barfoo{BarNick},*{FooNick}'},
+        func=create_func(cmd='cmd'),
+        cmd='cmd',
+        channel='#bar',
+        user=User('foo!foo@foo'),
+        whois=whois,
+    ))

@@ -14,8 +14,8 @@ requires = [
 
 setup(
     name='grazyna',
-    version='0.6.8',
-    download_url='https://github.com/firemark/grazyna/tarball/0.6.8',
+    version='0.6.9',
+    download_url='https://github.com/firemark/grazyna/tarball/0.6.9',
     description='Grazyna The irc bot',
     long_description='Grazyna The irc bot',
     classifiers=[],

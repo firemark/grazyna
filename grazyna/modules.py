@@ -16,7 +16,7 @@ import traceback
 import sys
 
 re_split = re.compile(r' *(?:(\w+)= *)?(?:"([^"]+)"|(\S+))')  # parse args
-re_channel_list = re.compile(r'([\w#^-]+|\*){([^}]+)}')
+re_channel_list = re.compile(r'([^,{]+|\*){([^}]+)}')
 re_db_args = re.compile(r'(^|[^$])\$(@|\d+)')
 
 
