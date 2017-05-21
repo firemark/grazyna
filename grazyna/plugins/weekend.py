@@ -10,7 +10,6 @@ def weekend(bot):
     """
     current_date = datetime.now()
     day = current_date.weekday()
-    datetime.strftime("D")
     answer = "WTF?"
     if day == 5 or day == 6:
         answer = "Oczywiście %s - jest weekend. Omawiamy tylko lajtowe tematy, ok?" % bot.nick
