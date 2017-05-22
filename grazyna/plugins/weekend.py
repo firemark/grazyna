@@ -8,11 +8,9 @@ def weekend(bot):
     """Answer to timeless question - are we at .weekend, yet?"""
     current_date = datetime.now()
     day = current_date.weekday()
-    answer = "WTF?"
     if day in (5, 6):
-        answer = "Oczywiście %s - jest weekend. Omawiamy tylko lajtowe tematy, ok?" % bot.nick
+        answer = "Tak, u mnie jest weekend. Omawiamy tylko lajtowe tematy, ok?"
     else:
-        answer = "%s - dopiero %s, musisz jeszcze poczekać..." \
-        % (bot.nick, datetime.strftime(current_date, "%A"))
-
+        answer = "Niestety dopiero {day}, musisz jeszcze poczekać..."\
+                 .format(day=datetime.strftime(current_date, "%A"),)
     bot.reply(answer)
