@@ -17,10 +17,14 @@ You can use simple Docker workflow for fast hacking/testing Grazyna without inst
 
 - make your modifications to project
 - docker build -f Dockerfile -t grazyna:dev .
+- docker run -it --rm grazyna:dev python -m pytest -v
 - docker run -it --rm grazyna:dev
 - test your Grazyna modifications on IRC #chan1, #chan2, #chan3
 - stop Grazyna container (Ctrl-C)
 - repeat
+
+dig into container
+- docker run -it --rm grazyna:dev /bin/bash
 
 cleanup:
 - docker system prune -a
