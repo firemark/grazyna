@@ -1,13 +1,10 @@
-#!/usr/bin/python3
-
 import asyncio
-#import pyejdb
-from grazyna.db import get_engine, get_session
 import re
 import datetime
 
-from .message_controller import MessageController
-from .sender import IrcSender
+from grazyna.irc.message_controller import MessageController
+from grazyna.irc.sender import IrcSender
+from grazyna.db import get_engine, get_session
 
 re_message = re.compile(
     r'(?:(:[^ ]+) )?'
@@ -26,8 +23,7 @@ class IrcClient(asyncio.Protocol, IrcSender):
     ping_counter = 0
 
     def __init__(self, config, connection_lost_future):
-        IrcSender.__init__(self)
-        asyncio.Protocol.__init__(self)
+        super().__init__()
         self.config = config
         self.importer = self.config.getmodule('main', 'importer')(self)
         self.importer.load_all()

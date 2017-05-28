@@ -16,10 +16,6 @@ class IrcSender(DefaultIrcSender):
     def send(self, *args):
         self.messages.append(Message(*args))
 
-    def send_msg(self, *args):
-        *args, tail = args
-        self.messages.append(Message(*args, tail))
-
 
 class Message(list):
 
@@ -31,5 +27,4 @@ class Message(list):
 class SayMessage(Message):
 
     def __init__(self, to, msg):
-        super().__init__('PRIVMSG', to, msg)
-
+        super().__init__('PRIVMSG', to, ':' + msg)
