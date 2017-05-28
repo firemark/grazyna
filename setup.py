@@ -10,6 +10,8 @@ requires = [
     'SQLAlchemy==1.0.12',
     'lxml>=3.3.0',
     'pytest==3.0.3',
+    'pytest-asyncio==0.5.0',
+    'pytest-cov==2.5.1',
 ]
 
 setup(
