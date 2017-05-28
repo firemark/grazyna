@@ -19,13 +19,13 @@ def make_client(**dict_cfg):
     return IrcClient(config, Future())
 
 
-def test_client_init():
+def test_init():
     client = make_client()
     assert client.importer.is_loaded is True
     assert client.importer.protocol is client
 
 
-def test_client_connection_made():
+def test_connection_made():
     client = make_client(main=dict(
         nick='socek', 
         password='klocek',
@@ -43,7 +43,7 @@ def test_client_connection_made():
 
 
 @patch('grazyna.irc.client.MessageController')
-def test_client_data_received(message_controller):
+def test_data_received(message_controller):
     client = make_client(main=dict(codecs=['utf-8']))
     msg1 = b':Angel PRIVMSG Wiz :Hello tl;dr\r\n'
     msg2 = b'PONG csd.bu.edu tolsun.oulu.fi\r\n'
@@ -55,7 +55,7 @@ def test_client_data_received(message_controller):
 
 
 @patch('grazyna.irc.client.MessageController')
-def test_client_wrong_data_received(message_controller):
+def test_wrong_data_received(message_controller):
     client = make_client(main=dict(codecs=['utf-8']))
     client.data_received(b'\xFF\r\n')
     assert message_controller.call_args_list == []

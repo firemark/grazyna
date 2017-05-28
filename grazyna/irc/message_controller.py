@@ -34,8 +34,6 @@ class MessageController(object):
     }
     log_files = {}
 
-    __slots__ = ('user', 'data', 'protocol', 'command', 'prefix')
-
     def __init__(self, protocol, data):
         self.protocol = protocol
         if not data:
