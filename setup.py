@@ -12,6 +12,7 @@ requires = [
     'pytest==3.0.3',
     'pytest-asyncio==0.5.0',
     'pytest-cov==2.5.1',
+    'flake8==3.3.0',
 ]
 
 setup(

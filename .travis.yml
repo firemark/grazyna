@@ -6,5 +6,7 @@ python:
     - "3.6"
 install:
     - python setup.py -q install
-script: pytest
-script: flake8 grazyna/
+script:
+    - pytest
+    #- flake8 grazyna/
+
