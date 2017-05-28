@@ -21,7 +21,7 @@ class Message(list):
 
     def __init__(self, *args):
         arg, *args = args
-        super().__init__([arg.upper(), *args])
+        super().__init__([arg.upper()] +  args)
 
 
 class SayMessage(Message):

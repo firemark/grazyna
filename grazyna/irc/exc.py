@@ -1,5 +1,4 @@
 class NoSuchNickError(Exception):
-
     nick = None
     
     def __init__(self, nick):
