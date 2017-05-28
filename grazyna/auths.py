@@ -1,6 +1,3 @@
-#from . import irc
-
-
 class AbstractAuth(object):
 
     def add_permission(self, username, channel, level):
@@ -18,8 +15,8 @@ class NonAuth(AbstractAuth):
     def auth(self, protocol):
         pass
 
-class QuakenetAuth(AbstractAuth):
 
+class QuakenetAuth(AbstractAuth):
     user = None
     passwd = None
 
@@ -28,11 +25,11 @@ class QuakenetAuth(AbstractAuth):
         self.passwd = passwd
 
     def auth(self, protocol):
-        protocol.say('Q@CServe.quakenet.org AUTH {0.user} {0.passwd}'.format(self))
+        msg = 'AUTH {0.user} {0.passwd}'.format(self)
+        protocol.say('Q@CServe.quakenet.org', msg)
 
 
 class FreenodeAuth(AbstractAuth):
-
     passwd = None
 
     def __init__(self, passwd):

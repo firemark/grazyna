@@ -1,10 +1,8 @@
-from .models import WhoisFuture
-
+from grazyna.irc.models import WhoisFuture
 import asyncio
 
 
 class IrcSender(object):
-
     transport = None
     whois_heap = None
 
