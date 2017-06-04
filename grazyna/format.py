@@ -9,25 +9,25 @@ Colors, bolding...
 
 
 def bold(msg):
-    return "\x02" + msg + "\x02"
+    return "\x02%s\x02" % msg
 
 
 def underline(msg):
-    return "\x1F" + msg + "\x1F"
+    return "\x1F%s\x1F" % msg
 
 
 def italic(msg):
-    return "\x16" + msg + "\x16"
+    return "\x16%s\x16" % msg
 
 
 def color(msg, front, back=None):
     if back:
-        front = str(front) + ',' + str(back)
+        front = '%d,%d' % (front, back)
     else:
         front = str(front)
-    return "\x03" + front + msg + "\x03"
+    return "\x03%s%s\x03" % (front, msg)
 
-#colors
+# colors
 color.white = 0
 color.black = 1
 color.dark_blue = 2
