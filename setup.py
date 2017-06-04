@@ -14,7 +14,7 @@ requires = [
     'pytest-cov==2.5.1',
     'flake8==3.3.0',
     'freezegun==0.3.9',
-    'asynctest==0.10.0',
+    'asynctest==0.10',
 ]
 
 setup(
