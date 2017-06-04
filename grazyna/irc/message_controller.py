@@ -162,10 +162,11 @@ class MessageController(object):
         if future:
             future.set_result(future.data)
 
-    def command_no_nick(self):
+    def command_no_such_nick(self):
         future = self.get_from_whois(pop=True)
         if future:
-            future.set_exception(NoSuchNickError)
+            nick = self.data[3]
+            future.set_exception(NoSuchNickError(nick))
 
 
 @asyncio.coroutine
