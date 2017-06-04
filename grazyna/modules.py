@@ -1,10 +1,10 @@
-from grazyna import format
-
 from asyncio import async, coroutine
 from asyncio.futures import Future
-from grazyna.models import Message
 
-from .request import RequestBot
+from grazyna.models import Message
+from grazyna.request import RequestBot
+from grazyna import format
+
 from importlib import reload
 from collections import defaultdict
 from inspect import getcallargs
@@ -21,7 +21,6 @@ re_db_args = re.compile(r'(^|[^$])\$(@|\d+)')
 
 
 class Plugin(list):
-
     __slots__ = ('temp', 'name', 'module_path', 'future', 'config')
 
     def __init__(self, name, module_path, funcs):
@@ -33,11 +32,10 @@ class Plugin(list):
         self.future = Future()
 
     def __repr__(self):
-        return "Plugin('%s')" % self.name
+        return "Plugin(%r)" % self.name
 
 
 class ExecutedCounter(object):
-
     __slots__ = ('last_time', 'counter')
 
     def __init__(self):
