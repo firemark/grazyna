@@ -11,8 +11,7 @@ def test_notice(protocol_with_importer, event_loop):
     data = [':socek!a@b', 'NOTICE', '#czarnobyl', 'message']
     ctrl = execute_message(protocol_with_importer, data)
 
-    def check(ctrl):
-        "wait for another coroutines"
+    def check(ctrl):  # wait for another coroutines
         importer = protocol_with_importer.importer
         assert protocol_with_importer.messages == []
         assert importer.execute.assert_called_once_with(

@@ -3,8 +3,8 @@ from functools import wraps
 from datetime import datetime
 from asyncio import async
 
-from .exc import NoSuchNickError
-from .models import User
+from grazyna.irc.exc import NoSuchNickError
+from grazyna.irc.models import User
 
 import os.path
 
@@ -28,6 +28,7 @@ class MessageController(object):
         '311': 'whois_user',
         '312': 'whois_server',
         '313': 'whois_operator',
+        '317': 'whois_idle',
         '319': 'whois_channels',
         '318': 'whois_end',
         '401': 'no_such_nick',
@@ -144,12 +145,16 @@ class MessageController(object):
 
     @whois_command
     def command_whois_server(self, whois_data):
-        whois_data.server = self.data[2]
+        whois_data.server = self.data[4]
+
+    @whois_command
+    def command_whois_idle(self, whois_data):
+        whois_data.idle = int(self.data[4])
 
     @whois_command
     def command_whois_channels(self, whois_data):
         whois_data.channels = [
-            channel.strip('@%+') for channel in self.data[2].split()
+            channel.strip('@%+') for channel in self.data[4].split()
         ]
 
     def command_whois_end(self):
