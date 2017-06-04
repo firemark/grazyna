@@ -1,4 +1,4 @@
-from . import format
+from grazyna import format
 
 from asyncio import async, coroutine
 from asyncio.futures import Future

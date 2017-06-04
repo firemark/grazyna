@@ -23,7 +23,7 @@ def whois_command(func):
 class MessageController(object):
 
     NUMERIC_COMMANDS = {
-        '005': 'start',
+        '005': 'start',  # http://www.irc.org/tech_docs/005.html
         '330': 'whois_account',  # I don't have idea where is in RFC
         '311': 'whois_user',
         '312': 'whois_server',
@@ -101,7 +101,7 @@ class MessageController(object):
         channel, nick = self.data[2:4]
         self.log(channel, "%s KICK %s" % (self.user.nick, nick))
 
-        if nick == self.protocol.config['main']['nick']:
+        if nick == self.config['main']['nick']:
             self.protocol.send('JOIN', channel)
 
     def command_error(self):

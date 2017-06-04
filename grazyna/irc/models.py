@@ -18,9 +18,18 @@ class User(object):
     def prefix(self):
         return "%s@%s" % (self.realname, self.host)
 
+    def __eq__(self, other):
+        if not isinstance(other, type(self)):
+            return False
+
+        return (
+            self.nick == other.nick
+            and self.realname == other.realname
+            and self.host == other.host
+        )
+
 
 class WhoisFuture(asyncio.Future):
-
     data = None
 
     def __init__(self, *args, **kwargs):
@@ -29,7 +38,6 @@ class WhoisFuture(asyncio.Future):
 
 
 class WhoisData(object):
-
     __slots__ = ('idle', 'account', 'ircname', 'host',
                  'channels', 'realname', 'server', 'nick')
 
