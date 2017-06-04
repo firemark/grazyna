@@ -1,4 +1,3 @@
-import asyncio
 from functools import wraps
 from datetime import datetime
 from asyncio import async
@@ -7,6 +6,7 @@ from grazyna.irc.exc import NoSuchNickError
 from grazyna.irc.models import User
 
 import os.path
+import asyncio
 
 
 def whois_command(func):
@@ -77,7 +77,7 @@ class MessageController(object):
                 os.path.join(self.config.get('main', 'dir_log'), channel), "at"
             )
         file_log = self.log_files[channel]
-        file_log.write('[%s] %s\r\n"' % (str_datetime, msg))
+        file_log.write('[%s] %s\r\n' % (str_datetime, msg))
         file_log.flush()
 
     def command_join(self):
