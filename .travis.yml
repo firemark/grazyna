@@ -6,6 +6,7 @@ python:
 install:
     - pip install --upgrade pip
     - python setup.py -q install
+    - pip install -r test_requirements.txt
 script:
     - pytest
     #- flake8 grazyna/

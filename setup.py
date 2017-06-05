@@ -9,12 +9,6 @@ requires = [
     'dateparser==0.3.1',
     'SQLAlchemy==1.0.12',
     'lxml>=3.3.0',
-    'pytest==3.0.3',
-    'pytest-asyncio==0.5.0',
-    'pytest-cov==2.5.1',
-    'flake8==3.3.0',
-    'freezegun==0.3.9',
-    'asynctest==0.10',
 ]
 
 setup(
