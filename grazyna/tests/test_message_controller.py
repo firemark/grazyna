@@ -40,7 +40,7 @@ def test_execute_message_without_data(protocol):
     assert protocol.messages == []
 
 
-@patch('grazyna.irc.message_controller.open')
+@patch('builtins.open')
 def test_log(open_mock, protocol):
     stream = open_mock.return_value = StringIO()
     protocol.config['main']['dir_log'] = '/foo'
