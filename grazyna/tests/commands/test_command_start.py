@@ -1,5 +1,5 @@
 from grazyna.tests.commands.base import execute_message
-from grazyna.test_mocks.sender import protocol, Message
+from grazyna.test_mocks.sender import Message
 
 import pytest
 

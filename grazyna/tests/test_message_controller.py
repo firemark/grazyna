@@ -1,5 +1,5 @@
 from grazyna.irc.message_controller import MessageController, ping_pong
-from grazyna.test_mocks.sender import protocol, Message
+from grazyna.test_mocks.sender import Message
 from unittest.mock import patch
 from freezegun import freeze_time
 from io import StringIO

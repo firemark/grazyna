@@ -5,21 +5,6 @@ from unittest.mock import Mock
 from asyncio import BaseTransport
 
 
-import pytest
-
-
-@pytest.fixture()
-def protocol():
-    return IrcSender()
-
-
-@pytest.fixture()
-def protocol_with_importer():
-    client = IrcSender()
-    client.importer = Importer(client)
-    return client
-
-
 class IrcSender(DefaultIrcSender):
     ready = False
     messages = None

@@ -1,5 +1,4 @@
 from grazyna.tests.commands.base import execute_message
-from grazyna.test_mocks.sender import protocol
 from grazyna.irc.models import User, WhoisFuture
 
 

@@ -1,5 +1,5 @@
 from grazyna.auths import QuakenetAuth
-from grazyna.test_mocks.sender import protocol, SayMessage
+from grazyna.test_mocks.sender import SayMessage
 
 
 def test_quakenet_auth(protocol):
