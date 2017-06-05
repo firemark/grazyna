@@ -20,4 +20,3 @@ def test_abstract_auth_check_permission(auth):
 def test_abstract_auth__auth_method(auth):
     with pytest.raises(NotImplementedError):
         auth.auth()
-

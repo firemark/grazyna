@@ -1,5 +1,5 @@
 from grazyna.tests.commands.base import execute_message
-from grazyna.irc.models import User, WhoisFuture
+from grazyna.irc.models import WhoisFuture
 
 
 def test_whois_user(protocol):
@@ -20,7 +20,6 @@ def test_whois_user_without_trigger(protocol):
         ':server', '311', 'bot',
         'socek', 'realsocek', 'onet.pl', '*', 'the socketor',
     ]
-    future = WhoisFuture()
     execute_message(protocol, data)
     assert 'socek' not in protocol.whois_heap
 

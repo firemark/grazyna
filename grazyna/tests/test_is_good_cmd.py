@@ -1,6 +1,6 @@
 from grazyna.modules import ModuleManager
 from grazyna.irc.models import User, WhoisData
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import asyncio
 import pytest
@@ -15,8 +15,11 @@ def create_func(cmd='test'):
     return func_test
 
 
-def cmd_is_good(cfg, func, cmd=None, private=False, channel=None, user=None, whois=None):
+def cmd_is_good(
+        cfg, func, cmd=None, private=False,
+        channel=None, user=None, whois=None):
     protocol = Mock(name='protocol')
+
     @asyncio.coroutine
     def whois_func(nick):
         return whois
@@ -123,6 +126,7 @@ def test__user_in_whitelist():
         user=User('foo!foo@foo'),
         whois=whois,
     ))
+
 
 @pytest.mark.asyncio
 def test__user_and_channel_in_blacklist():

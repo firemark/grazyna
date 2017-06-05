@@ -8,4 +8,3 @@ def test_quakenet_auth(protocol):
     assert protocol.messages == [
         SayMessage('Q@CServe.quakenet.org', 'AUTH socek klocek'),
     ]
-        

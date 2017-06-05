@@ -8,4 +8,3 @@ def test_freenode_auth(protocol):
     assert protocol.messages == [
         SayMessage('nickserv', 'identify klocek'),
     ]
-

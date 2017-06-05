@@ -6,13 +6,16 @@ Created on 01-04-2013
 from grazyna.modules import get_args_from_text, check_type
 from grazyna.utils.types import range_int
 
-import unittest
 import pytest
 
-def func_test(bot, arg1, arg2,
-              karg:range_int(0, 10)=0,
-              akarg:int=2):
+
+def func_test(
+        bot, arg1, arg2,
+        karg: range_int(0, 10)=0,
+        akarg: int=2):
     pass
+
+
 func_test.varkw = None
 func_test.varargs = None
 func_test.cmd = 'cmd'
@@ -25,7 +28,7 @@ func_test.cmd = 'cmd'
         "tiramo firemark with spaces karg= 2 akarg= 5",
         ["tiramo", "firemark with spaces"],
         {"karg": "2", "akarg": "5"}
-    ), 
+    ),
     (
         '"tiramo with spaces" firemark karg=" spaces "',
         ["tiramo with spaces", "firemark"],
@@ -45,10 +48,13 @@ def test__get_args(text, cor_args, cor_kwargs):
 
 
 @pytest.mark.parametrize('args,kwargs,result', [
-    #without kwargs
+    # without kwargs
     (["t1", "t2"], {}, {"arg1": "t1", "arg2": "t2", "karg": 0, "akarg": 2}),
-    #with optionals
-    (["t", "t", "-1", "-1"], {}, {"arg1": "t", "arg2": "t", "karg": 0, "akarg": -1}),
+    # with optionals
+    (
+        ["t", "t", "-1", "-1"], {},
+        {"arg1": "t", "arg2": "t", "karg": 0, "akarg": -1}
+    ),
     (  # mixing
         ["ta", "t"], {"karg": "5", "akarg": "-1"},
         {"arg1": "ta", "arg2": "t", "karg": 5, "akarg": -1}
@@ -64,4 +70,3 @@ def test__get_args(text, cor_args, cor_kwargs):
 ])
 def test__check_type(args, kwargs, result):
     assert check_type(args, kwargs, func_test) == result
-

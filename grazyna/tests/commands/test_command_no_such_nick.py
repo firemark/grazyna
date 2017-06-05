@@ -1,6 +1,6 @@
 from grazyna.tests.commands.base import execute_message
 from grazyna.irc.exc import NoSuchNickError
-from grazyna.irc.models import User, WhoisFuture
+from grazyna.irc.models import WhoisFuture
 
 
 def test_command_no_such_nick(protocol):

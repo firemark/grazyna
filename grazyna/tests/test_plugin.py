@@ -14,6 +14,6 @@ def test_plugin_init():
     assert plugin == [foo]
 
 
-def test_plugin_init():
+def test_plugin_repr():
     plugin = Plugin('foobar', 'grazyna.foo', [])
     assert repr(plugin) == "Plugin('foobar')"

@@ -19,4 +19,3 @@ def test_notice(protocol_with_importer, event_loop):
 
         ctrl.log.assert_called_once_with('#czarnobyl', '<socek> message')
     event_loop.call_soon(check, ctrl)
-

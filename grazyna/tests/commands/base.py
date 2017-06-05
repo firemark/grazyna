@@ -7,4 +7,3 @@ def execute_message(protocol, data):
     ctrl.log = Mock()
     ctrl.execute_message()
     return ctrl
-

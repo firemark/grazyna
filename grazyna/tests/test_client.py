@@ -3,7 +3,6 @@ from grazyna.irc.client import IrcClient as DefaultIrcClient
 from grazyna.test_mocks.sender import IrcSender, Message
 from grazyna.config import create_empty_config
 from unittest.mock import Mock, patch, call
-import pytest
 
 
 class IrcClient(DefaultIrcClient, IrcSender):
@@ -13,7 +12,7 @@ class IrcClient(DefaultIrcClient, IrcSender):
 def make_client(**dict_cfg):
     config = create_empty_config()
     config.read_dict({'main': {
-        'importer':'grazyna.test_mocks.importer.Importer',
+        'importer': 'grazyna.test_mocks.importer.Importer',
     }})
     config.read_dict(dict_cfg)
     return IrcClient(config, Future())
@@ -27,7 +26,7 @@ def test_init():
 
 def test_connection_made():
     client = make_client(main=dict(
-        nick='socek', 
+        nick='socek',
         password='klocek',
         ircname='superSocek',
         realname='realSocek',
@@ -67,4 +66,3 @@ def test_connection_lost():
     client.connection_lost(exc)
     assert client.connection_lost_future.exception() == exc
     assert client.importer.is_canceled is True
-

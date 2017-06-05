@@ -1,6 +1,5 @@
 from grazyna.irc.sender import IrcSender as DefaultIrcSender
 from grazyna.config import create_empty_config
-from grazyna.test_mocks.importer import Importer
 from unittest.mock import Mock
 from asyncio import BaseTransport
 
@@ -34,7 +33,7 @@ class Message(list):
 
     def __init__(self, *args):
         arg, *args = args
-        super().__init__([arg.upper()] +  args)
+        super().__init__([arg.upper()] + args)
 
 
 class SayMessage(Message):

@@ -24,4 +24,3 @@ class Importer(object):
 
     def cancel_tasks(self):
         self.is_canceled = True
-

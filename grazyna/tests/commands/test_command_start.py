@@ -3,7 +3,7 @@ from grazyna.test_mocks.sender import Message
 
 import pytest
 
-data = [':irc.server.net', '005', 'bot', 'CHANTYPES=#', 'NICKLEN=30'] 
+data = [':irc.server.net', '005', 'bot', 'CHANTYPES=#', 'NICKLEN=30']
 
 
 def test_start_if_is_started(protocol):

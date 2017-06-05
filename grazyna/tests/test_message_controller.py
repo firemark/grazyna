@@ -1,5 +1,4 @@
 from grazyna.irc.message_controller import MessageController, ping_pong
-from grazyna.test_mocks.sender import Message
 from unittest.mock import patch
 from freezegun import freeze_time
 from io import StringIO
@@ -55,6 +54,7 @@ def test_log(open_mock, protocol):
         '[06-06-2017 06:06:06] another msg\r\n'
     )
 
+
 @pytest.mark.asyncio
 @asynctest.mock.patch('grazyna.irc.message_controller.asyncio')
 def test_ping_pong(asyncio_mock, protocol):
@@ -63,4 +63,3 @@ def test_ping_pong(asyncio_mock, protocol):
     assert asyncio_mock.sleep.call_count == 5
     assert protocol.ping_counter == 5
     protocol.transport.close.assert_called_once_with()
-
