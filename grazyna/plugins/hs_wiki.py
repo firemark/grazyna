@@ -26,9 +26,8 @@ def get_html(url):
         resp = yield from session.get(url)
         try:
             raw_data = yield from resp.read()
-            return fromstring_to_html(
-                raw_data.decode('utf-8', errors='xmlcharrefreplace')
-            )
+            data = raw_data.decode('utf-8', errors='xmlcharrefreplace')
+            return fromstring_to_html(data)
         finally:
             resp.close()
     finally:
