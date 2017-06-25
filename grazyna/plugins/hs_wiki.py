@@ -19,6 +19,7 @@ LIST_XPATH = '//span[starts-with(@id,$id)]/../following-sibling::ul[1]/li'
 re_date_range = re.compile(r"(\d\d+?)\s*-\s*(\d\d?)")
 re_every = re.compile(r"^[Kk]a[żz]d[yaą]")
 
+
 @asyncio.coroutine
 def get_html(url):
     session = ClientSession()
@@ -34,21 +35,19 @@ def get_html(url):
         session.close()
 
 
-def get_list_of_text_sorted_by_time(nodes, parse_date=None, old_dates=False):
-    parse_date = parse_date or (lambda text: dateparser.parse(text))
+def get_list_of_text_sorted_by_time(nodes, parse_date=None):
+    parse_date = parse_date or dateparser.parse
     now = datetime.now()
+    texts = (node.text.strip() for node in nodes if node.text)
+    #print(list(texts))
+    texts_with_dates = ((text, parse_date(text)) for text in texts)
+
     list_data = sorted(
         (
-            (text, date) for text, date in (
-                (text.strip(), parse_date(text))
-                for text in (node.text for node in nodes) if text
-            )
-            if date is not None and (
-                (not old_dates and date > now) or
-                (old_dates and date < now)
-            )
+            (text, date) for text, date in texts_with_dates
+            if date is not None and date > now
         ),
-        key=lambda obj: (obj[1] - now) * (not old_dates * 2 - 1)  # 0,1 -> 1,-1
+        key=lambda obj: now - obj[1]
     )
     return [text for text, date in list_data]
 
@@ -62,11 +61,10 @@ def meet_parse_date(text):
 
 
 @asyncio.coroutine
-def show_meets(bot, position, label, old_dates):
+def show_meets(bot, position, label):
     html = yield from get_html(URL_MEETS)
     nodes = html.xpath(LIST_XPATH, id=label)
-    list_data = get_list_of_text_sorted_by_time(
-        nodes, meet_parse_date, old_dates)
+    list_data = get_list_of_text_sorted_by_time(nodes, meet_parse_date)
     if not list_data:
         return bot.reply('¬_¬ no meetings')
     len_list = len(list_data)
@@ -80,12 +78,7 @@ def show_meets(bot, position, label, old_dates):
 
 @register(cmd='next-meet')
 def next_meet(bot, position: range_int(1)=1):
-    yield from show_meets(bot, position, MEETS_ID, old_dates=False)
-
-
-@register(cmd='prev-meet')
-def prev_meet(bot, position: range_int(1)=1):
-    yield from show_meets(bot, position, PREV_MEETS_ID, old_dates=True)
+    yield from show_meets(bot, position, MEETS_ID)
 
 
 @register(cmd='trash')

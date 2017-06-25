@@ -6,7 +6,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 requires = [
     'aiohttp==0.20.2',
-    'dateparser==0.3.1',
+    'dateparser==0.6.0',
     'SQLAlchemy==1.0.12',
     'lxml>=3.3.0',
 ]
