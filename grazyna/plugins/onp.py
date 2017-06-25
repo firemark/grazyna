@@ -1,12 +1,11 @@
 #!/usr/bin/python3
 
-from grazyna.utils import create_help, register
+from grazyna.utils import register
 from grazyna.utils.types import range_int
 from grazyna import format
 
 from math import isnan
 from random import random, randint
-from collections import namedtuple
 from functools import wraps
 
 import operator
@@ -17,7 +16,9 @@ special_vars = {
     'e': math.e,
 }
 
+
 def reverse_func(func):
+
     @wraps(func)
     def inner(*args):
         return func(*args[::-1])
@@ -25,7 +26,7 @@ def reverse_func(func):
 
 
 operator_funcs = {
-    #'op': (num, func),
+    # 'op': (num, func),
     '+': (2, operator.add),
     '-': (2, operator.sub),
     '/': (2, operator.truediv),
@@ -64,17 +65,17 @@ operator_funcs = {
 
 
 @register(cmd="onp")
-def onp(bot, tasks, round:range_int(0)=3):
+def onp(bot, tasks, round: range_int(0)=3):
     """
         example: .onp 2 2 2 + * log2 round=5
-        operators https://github.com/firemark/grazyna/blob/master/grazyna/plugins/onp.py
+        https://github.com/firemark/grazyna/blob/master/grazyna/plugins/onp.py
     """
     score = calc(tasks.split(), round)
     bot.say("Result: %s" % score)
 
 
 @register(cmd="rpn")
-def rpn(bot, tasks, round:range_int(0)=3):
+def rpn(bot, tasks, round: range_int(0)=3):
     yield from onp(bot, tasks, round)
 
 
@@ -92,7 +93,7 @@ def calc(tasks, round_num=3):
     if len(buffer) > 0:
         value = buffer.pop()
         if type(value) == bool:
-            return value.__repr__()
+            return value
         else:
             if isnan(value):
                 if random() > 0.87:
@@ -125,8 +126,9 @@ def execute(op, buffer):
 
     try:
         value = func(*args)
+    except ZeroDivisionError:
+        return float('nan')
     except OverflowError:
         return format.bold("Over 9000!!")
     else:
         buffer.append(value)
-

@@ -1,6 +1,4 @@
-#!/usr/bin/python3
-
-from ..utils import register
+from grazyna.utils import register
 
 
 @register(reg=r'^[Ss]{4,}(?:!+|.+)$')

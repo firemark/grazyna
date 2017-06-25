@@ -45,8 +45,9 @@ class RequestBot(object):
         self.protocol.reply(nick or self.user.nick, msg, chan or self.chan)
 
     def kick(self, who=None, why='', chan=None):
-        if not self.private:
-            self.protocol.kick(who or self.user.nick, chan or self.chan, why)
+        if self.private:
+            return
+        self.protocol.kick(who or self.user.nick, chan or self.chan, why)
 
     def private_say(self, msg, nick=None):
         self.protocol.say(nick or self.user.nick, msg)

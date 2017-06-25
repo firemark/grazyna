@@ -18,6 +18,7 @@ class IrcSender(DefaultIrcSender):
         self.transport = Mock(spec=BaseTransport)
         config.read_dict(dict(
             main=dict(
+                nick='bot',
                 importer='grazyna.test_mocks.importer.Importer',
             ),
             auth=dict(
