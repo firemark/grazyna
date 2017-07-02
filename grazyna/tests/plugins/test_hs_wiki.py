@@ -27,27 +27,37 @@ def test_next_meet(public_bot):
     @asyncio.coroutine
     def get_html(url):
         return fromstring('''
-        <span id="Najbli.C5.BCsze_spotkania_tematyczne">lol title</span>
-        <ul>
-            <li>14 listopada 2015,9:00 - 15:00 Code retreat</li>
-            <li>4 listopada 2015, 18:00 - MeetJS</li>
-        </ul>
-    ''') 
+            <h2>
+                <span id="Najbli.C5.BCsze_spotkania_tematyczne">
+                    lol title
+                </span>
+            </h2>
+            <ul>
+                <li>14 listopada 2015, 9:00 - 15:00 - Code retreat</li>
+                <li>4 listopada 2015, 18:00 - MeetJS</li>
+            </ul>
+        ''')
     with freeze_time('01-10-2015 12:00:00'),\
             patch('grazyna.plugins.hs_wiki.get_html', get_html):
         yield from next_meet(public_bot)
-        yield from next_meet(public_bot, position=1)
+        yield from next_meet(public_bot, position=2)
+        yield from next_meet(public_bot, position=3)
 
-    # position default(0): first newest
-    # position 1: second newest
-    public_bot.protocol.messages == [
+    # position default(1): first newest
+    # position 2: second newest
+    # position 3: doesnt exist
+    assert public_bot.protocol.messages == [
         SayMessage(
             '#czarnobyl',
-            'socek: 4 listopada 2015, 18:00 - MeetJS [2 meets]'
+            'socek: 4 listopada 2015, 18:00 - MeetJS [2 meets]',
         ),
         SayMessage(
             '#czarnobyl',
-            'socek: 14 listopada 2015,9:00 - 15:00 Code retreat [2 meets]'
+            'socek: 14 listopada 2015, 9:00 - 15:00 - Code retreat [2 meets]',
+        ),
+        SayMessage(
+            '#czarnobyl',
+            'socek: only 2 meets in calendar!',
         ),
     ]
 
@@ -68,7 +78,7 @@ def test_next_meet_older_meets(public_bot):
                 <li>4 listopada 2015, 18:00 - MeetJS</li>
             </ul>
         ''') 
-    with freeze_time('01-10-2016 12:00:00'),\
+    with freeze_time('2016-10-01 12:00:00'),\
             patch('grazyna.plugins.hs_wiki.get_html', get_html):
         yield from next_meet(public_bot)
 
@@ -90,7 +100,7 @@ def test_next_meet_no_meets(public_bot):
             </h2>
             <ul></ul>
         ''') 
-    with freeze_time('01-10-2016 12:00:00'),\
+    with freeze_time('2016-10-01 12:00:00'),\
             patch('grazyna.plugins.hs_wiki.get_html', get_html):
         yield from next_meet(public_bot)
 
@@ -114,7 +124,7 @@ def test_trash(public_bot):
             </ul>
         ''')
 
-    with freeze_time('01-10-2016 12:00:00'),\
+    with freeze_time('2016-10-01 12:00:00'),\
             patch('grazyna.plugins.hs_wiki.get_html', get_html):
         yield from trash(public_bot)
 
@@ -135,7 +145,7 @@ def test_empty_trash(public_bot):
             <ul></ul>
         ''')
 
-    with freeze_time('01-10-2016 12:00:00'),\
+    with freeze_time('2016-10-01 12:00:00'),\
             patch('grazyna.plugins.hs_wiki.get_html', get_html):
         yield from trash(public_bot)
 

@@ -39,7 +39,6 @@ def get_list_of_text_sorted_by_time(nodes, parse_date=None):
     parse_date = parse_date or dateparser.parse
     now = datetime.now()
     texts = (node.text.strip() for node in nodes if node.text)
-    #print(list(texts))
     texts_with_dates = ((text, parse_date(text)) for text in texts)
 
     list_data = sorted(
@@ -47,7 +46,7 @@ def get_list_of_text_sorted_by_time(nodes, parse_date=None):
             (text, date) for text, date in texts_with_dates
             if date is not None and date > now
         ),
-        key=lambda obj: now - obj[1]
+        key=lambda obj: obj[1] - now
     )
     return [text for text, date in list_data]
 
