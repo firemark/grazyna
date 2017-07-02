@@ -1,7 +1,6 @@
-import random
-from ..utils import register, create_help
+from grazyna.utils import register
 
-#create_help('czy', '?czy <pytanie>')
+import random
 
 
 @register(cmd='{cmd}')
@@ -13,10 +12,10 @@ def quotes(bot, ask=None):
 
 def get_replies(bot):
     """funny random quotes"""
-    replies = bot.plugin.temp.get('replies')
+    replies = bot.temp.get('replies')
     if replies is None:
         pathname = bot.config['file']
         with open(pathname) as f:
             replies = f.read().splitlines()
-        bot.plugin.temp['replies'] = replies
+        bot.temp['replies'] = replies
     return replies
