@@ -1,7 +1,10 @@
 from grazyna.irc.sender import IrcSender as DefaultIrcSender
 from grazyna.config import create_empty_config
+from grazyna.test_mocks.importer import Importer
+
 from unittest.mock import Mock
 from asyncio import BaseTransport
+
 
 
 class IrcSender(DefaultIrcSender):
@@ -16,6 +19,7 @@ class IrcSender(DefaultIrcSender):
         self.messages = []
         self.config = config = create_empty_config()
         self.transport = Mock(spec=BaseTransport)
+        self.importer = Importer(self)
         config.read_dict(dict(
             main=dict(
                 nick='bot',

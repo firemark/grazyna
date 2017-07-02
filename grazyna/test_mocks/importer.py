@@ -18,6 +18,9 @@ class Importer(object):
     def __init__(self, protocol):
         self.protocol = protocol
         self.execute = AsyncMock()
+        self.load = Mock()
+        self.reload = Mock()
+        self.remove = Mock()
 
     def load_all(self):
         self.is_loaded = True

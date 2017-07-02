@@ -37,7 +37,7 @@ def test_next_meet(public_bot):
                 <li>4 listopada 2015, 18:00 - MeetJS</li>
             </ul>
         ''')
-    with freeze_time('01-10-2015 12:00:00'),\
+    with freeze_time('2015-10-01 12:00:00'),\
             patch('grazyna.plugins.hs_wiki.get_html', get_html):
         yield from next_meet(public_bot)
         yield from next_meet(public_bot, position=2)
