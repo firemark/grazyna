@@ -1,10 +1,14 @@
+import asyncio
+
 from grazyna.plugins import admin as admin_plugins
+from grazyna.irc.models import WhoisData
 from grazyna.test_mocks.sender import SayMessage, Message
 
-from unittest.mock import patch
-from asynctest.mock import patch as async_patch
+from asynctest.mock import patch as async_patch, Mock as AsyncMock
+from io import StringIO
 
 import pytest
+
 
 
 @pytest.mark.asyncio
@@ -112,3 +116,73 @@ def test_admin_part_public(public_bot):
 def test_admin_part_private(private_bot):
     yield from admin_plugins.part(private_bot)
     assert private_bot.protocol.messages == []
+
+
+@pytest.mark.asyncio
+@async_patch('grazyna.plugins.admin.open', create=True)
+@async_patch('grazyna.plugins.admin.argv')
+def test_admin_reload_config(mock_argv, mock_open, public_bot):
+    mock_open.return_value = StringIO('''
+[plugins]
+ping = grazyna.plugins.ping
+new_ping = grazyna.plugins.ping
+    ''')
+    importer = public_bot.protocol.importer
+    importer.plugins = {
+        'ping': None,
+        'old_ping': None,
+    }
+
+    yield from admin_plugins.reload_config(public_bot)
+
+    importer.remove.assert_called_once_with('old_ping')
+    importer.load.assert_called_once_with('new_ping', 'grazyna.plugins.ping')
+    assert public_bot.protocol.messages == [
+        SayMessage('#czarnobyl', 'socek: Done!'),
+    ]
+
+
+@pytest.mark.asyncio
+@async_patch('grazyna.plugins.admin.open', create=True)
+@async_patch('grazyna.plugins.admin.argv')
+def test_admin_reload_config_without_plugins(mock_argv, mock_open, public_bot):
+    mock_open.return_value = StringIO('''
+[plugins]
+ping = grazyna.plugins.ping
+new_ping = grazyna.plugins.ping
+    ''')
+    yield from admin_plugins.reload_config(public_bot, 'no')
+
+    importer = public_bot.protocol.importer
+    assert importer.load.not_called
+    assert importer.remove.not_called
+    assert public_bot.protocol.messages == [
+        SayMessage('#czarnobyl', 'socek: Done!'),
+    ]
+
+
+@pytest.mark.asyncio
+@async_patch('asyncio.sleep')
+def test_admin_rocket(mock_sleep, public_bot):
+    public_bot.config['__nick__'] = 'grazyna'
+
+    @asyncio.coroutine
+    def whois_func(enemy):
+        whois_data  = WhoisData()
+        whois_data.realname = 'foo'
+        whois_data.host = 'bar'
+        return  whois_data
+
+    public_bot.protocol.whois = whois_func
+
+    yield from admin_plugins.rocket(public_bot, 'socek', n=2)
+
+    # 2 + 1 to wait for ban
+    assert mock_sleep.call_count == 3
+    assert public_bot.protocol.messages == [
+        SayMessage('#czarnobyl', '2...'),
+        SayMessage('#czarnobyl', '1...'),
+        SayMessage('#czarnobyl', 'FIRE!'),
+        Message('MODE', '#czarnobyl', '+b', '*!foo@bar'),
+        Message('KICK', '#czarnobyl', 'socek', ':Kaboom!'),
+    ]

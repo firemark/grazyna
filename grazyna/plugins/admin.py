@@ -67,7 +67,7 @@ def quit_bot(bot):
 
 
 @register(cmd='say', admin_required=True)
-def say(bot, msg, nick=None, chan:is_chan=None):
+def say(bot, msg, nick=None, chan: is_chan=None):
     if bot.private and not (chan or nick):
         return
 
@@ -78,7 +78,7 @@ def say(bot, msg, nick=None, chan:is_chan=None):
 
 
 @register(cmd='op', admin_required=True)
-def op(bot, nick=None, chan:is_chan=None):
+def op(bot, nick=None, chan: is_chan=None):
     if bot.private and not chan:
         return
 
@@ -86,14 +86,14 @@ def op(bot, nick=None, chan:is_chan=None):
 
 
 @register(cmd='part', admin_required=True)
-def part(bot, chan:is_chan=None, why=None):
+def part(bot, chan: is_chan=None, why=None):
     if bot.private and not chan:
         return
     bot.command_msg('PART', chan or bot.chan, why)
 
 
 @register(cmd='rocket', admin_required=True)
-def rocket(bot, nick, n:range_int(0, 10)=3, chan:is_chan=None):
+def rocket(bot, nick, n: range_int(0, 10)=3, chan: is_chan=None):
     if bot.private and not chan:
         return
 
@@ -101,15 +101,11 @@ def rocket(bot, nick, n:range_int(0, 10)=3, chan:is_chan=None):
     if n == 0 or enemy == bot.config['__nick__']:
         enemy = bot.user.nick
 
-    @asyncio.coroutine
-    def timer(): 
-        for i in range(n):
-            bot.say(str(n - i) + '...')
-            yield from asyncio.sleep(1)
-        bot.say('FIRE!')
-        whois = yield from bot.protocol.whois(enemy)
+    for i in range(n):
+        bot.say('{}...'.format(n - i))
         yield from asyncio.sleep(1)
-        prefix = "*!%s@%s" % (whois.realname or '*', whois.host or '*')
-        bot.time_ban(n * 2, why='Kaboom!', who=enemy, chan=chan, prefix=prefix)
-        
-    asyncio.async(timer())
+    bot.say('FIRE!')
+    whois = yield from bot.protocol.whois(enemy)
+    yield from asyncio.sleep(1)
+    prefix = "*!%s@%s" % (whois.realname or '*', whois.host or '*')
+    bot.time_ban(n * 2, why='Kaboom!', who=enemy, chan=chan, prefix=prefix)
