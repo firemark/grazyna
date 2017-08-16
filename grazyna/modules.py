@@ -135,7 +135,6 @@ class ModuleManager(object):
         yield from self.execute_func(
             func, plugin, private, channel, user, args, kwargs)
 
-
     @coroutine
     def find_message_in_db(self, cmd, channel, text):
         if not self.protocol.db:
@@ -143,10 +142,10 @@ class ModuleManager(object):
         with self.protocol.get_session() as session:
             row = (
                 session
-                    .query(Message.message)
-                    .filter_by(key=cmd, channel=channel)
-                    .order_by(func.random())
-                    .first()
+                .query(Message.message)
+                .filter_by(key=cmd, channel=channel)
+                .order_by(func.random())
+                .first()
             )
         if row is None:
             return
@@ -180,12 +179,13 @@ class ModuleManager(object):
             if match is None:
                 return
             args = match.groups()
-            kwargs = match.groupdict()
             cfg = self.get_plugin_cfg(plugin.name)
-            is_good = (yield from self.check_white_black_lists(cfg, channel, user))
+            is_good = (
+                yield from self.check_white_black_lists(cfg, channel, user)
+            )
             if is_good:
                 yield from self.execute_func(
-                    func, plugin, private, channel, user, args, kwargs)
+                    func, plugin, private, channel, user, args, {})
 
     def find_function_in_plugin_with_name(self, private=None):
         return (
@@ -306,7 +306,7 @@ class ModuleManager(object):
         try:
             dict_arg = check_type(args, kwargs, func)
         except Exception as e:
-            print(type(e), e)
+            traceback.print_exc(file=sys.stdout)
             return
 
         yield from self._execute_func(func, bot, dict_arg, user, channel)
@@ -334,7 +334,7 @@ class ModuleManager(object):
             seconds=self.config.getint('main', 'time_to_block')
         )
 
-        self.executed_counters = defaultdict(ExecutedCounter, { # cleanups
+        self.executed_counters = defaultdict(ExecutedCounter, {  # cleanups
             key: counter for key, counter in self.executed_counters.items()
             if now - counter.last_time < delta
         })
@@ -381,6 +381,7 @@ def get_args_from_text(text, max_args=-1):
 def check_type(args, kwargs, func):
     real_func = getattr(func, '__wrapped__', func)
     dict_arg = getcallargs(real_func, None, *args, **kwargs)
+    print(real_func, dict_arg)
     for key, item in dict_arg.items():
         arg_type = real_func.__annotations__.get(key, str)
         if item is not None:

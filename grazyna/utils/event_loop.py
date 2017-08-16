@@ -27,7 +27,6 @@ def loop(time_config_key, default):
                     except:
                         traceback.print_exc(file=sys.stdout)
 
-
                 yield from asyncio.sleep(time_to_sleep)
         inner.is_loop = True
         return inner

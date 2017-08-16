@@ -21,10 +21,13 @@ class IrcSender(DefaultIrcSender):
         self.transport = Mock(spec=BaseTransport)
         self.importer = Importer(self)
         config.read_dict(dict(
-            main=dict(
-                nick='bot',
-                importer='grazyna.test_mocks.importer.Importer',
-            ),
+            main={
+                'nick': 'bot',
+                'importer': 'grazyna.test_mocks.importer.Importer',
+                'command-prefix': '.',
+                'time_to_block': '30',
+                'executed_commands_per_time': '20',
+            },
             auth=dict(
                 module='grazyna.auths.NonAuth',
             )

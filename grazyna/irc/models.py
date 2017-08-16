@@ -9,14 +9,17 @@ class User(object):
 
     def __init__(self, prefix):
         try:
-            self.nick, name_host = prefix.split('!')
-            self.realname, self.host = name_host.split('@')
+            self.nick, _, name_host = prefix.partition('!')
+            self.realname, _, self.host = name_host.partition('@')
         except:
             pass
 
     @property
     def prefix(self):
         return "%s@%s" % (self.realname, self.host)
+
+    def __repr__(self):
+        return "User('%s!%s')" % (self.nick, self.prefix)
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):
