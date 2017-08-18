@@ -381,7 +381,6 @@ def get_args_from_text(text, max_args=-1):
 def check_type(args, kwargs, func):
     real_func = getattr(func, '__wrapped__', func)
     dict_arg = getcallargs(real_func, None, *args, **kwargs)
-    print(real_func, dict_arg)
     for key, item in dict_arg.items():
         arg_type = real_func.__annotations__.get(key, str)
         if item is not None:

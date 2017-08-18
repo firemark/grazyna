@@ -1,3 +1,4 @@
+from grazyna.db import get_engine, create_database
 from grazyna.test_mocks.sender import IrcSender
 from grazyna.test_mocks.importer import Importer
 from grazyna.request import RequestBot
@@ -9,6 +10,15 @@ import pytest
 @pytest.fixture()
 def protocol():
     return IrcSender()
+
+
+@pytest.fixture()
+def protocol_with_db():
+    client = IrcSender()
+    db_uri = client.config.get('main', 'db_uri')
+    client.db = get_engine(db_uri)
+    create_database(client.db)
+    return client
 
 
 @pytest.fixture()

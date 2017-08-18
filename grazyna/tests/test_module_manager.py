@@ -1,9 +1,12 @@
 from unittest.mock import Mock, MagicMock
 from asynctest.mock import CoroutineMock, patch as async_patch
+from freezegun.api import freeze_time
 
 from grazyna.irc.models import User
-from grazyna.modules import ModuleManager, Plugin
+from grazyna.models import Message
+from grazyna.modules import ModuleManager, Plugin, ExecutedCounter
 from grazyna.request import RequestBot
+from grazyna.test_mocks.sender import SayMessage
 from grazyna.test_mocks.dummy_plugin import dummy
 
 import pytest
@@ -12,6 +15,14 @@ import pytest
 @pytest.fixture
 def manager(protocol):
     manager = ModuleManager(protocol)
+    manager.config.add_section('plugins')
+    manager.config.set('plugins', 'dummy', 'grazyna.test_mocks.dummy_plugin')
+    return manager
+
+
+@pytest.fixture
+def manager_with_db(protocol_with_db):
+    manager = ModuleManager(protocol_with_db)
     manager.config.add_section('plugins')
     manager.config.set('plugins', 'dummy', 'grazyna.test_mocks.dummy_plugin')
     return manager
@@ -204,3 +215,50 @@ def test_execute_func(bot_cls, manager: ModuleManager):
     )
 
     mock.assert_called_once_with(bot, a='lol', b=42)
+
+
+@pytest.mark.asyncio
+def test_find_message_in_db(manager_with_db: ModuleManager):
+    manager_with_db.load_all()
+    with manager_with_db.protocol.get_session() as session:
+        msg = Message()
+        msg.channel = '#czarnobyl'
+        msg.key = 'gjm'
+        msg.message = '$0: $1gram juz miesiac; $@'
+        session.add(msg)
+
+    yield from manager_with_db.find_message_in_db(
+        cmd='gjm',
+        channel='#czarnobyl',
+        text='lol kilo',
+    )
+
+    assert manager_with_db.protocol.messages == [
+        SayMessage(
+            '#czarnobyl',
+            'lol: kilogram juz miesiac; lol kilo',
+        )
+    ]
+
+
+def test_is_blocked(manager: ModuleManager):
+    user = User('a!0@c')
+    another_user = User('b!1@c')
+    counters = manager.executed_counters
+    with freeze_time('2017-01-01 12:00:00'):
+        counter = ExecutedCounter()
+        counter.counter = 50
+        counters[user.prefix] = counter
+
+    with freeze_time('2017-01-01 10:00:00'):
+        counter = ExecutedCounter()
+        counter.counter = 50
+        counters[another_user.prefix] = counter
+
+    with freeze_time('2017-01-01 12:00:00'):
+        assert manager.is_blocked(user) is True
+        assert manager.is_blocked(another_user) is False
+
+    counters = manager.executed_counters
+    assert counters[user.prefix].counter == 50
+    assert counters[another_user.prefix].counter == 1

@@ -1,3 +1,4 @@
+from grazyna.db import get_session
 from grazyna.irc.sender import IrcSender as DefaultIrcSender
 from grazyna.config import create_empty_config
 from grazyna.test_mocks.importer import Importer
@@ -11,6 +12,7 @@ class IrcSender(DefaultIrcSender):
     ready = False
     messages = None
     config = None
+    db = None
     transport = None
     ping_counter = 0
 
@@ -27,6 +29,7 @@ class IrcSender(DefaultIrcSender):
                 'command-prefix': '.',
                 'time_to_block': '30',
                 'executed_commands_per_time': '20',
+                'db_uri': 'sqlite://',
             },
             auth=dict(
                 module='grazyna.auths.NonAuth',
@@ -35,6 +38,9 @@ class IrcSender(DefaultIrcSender):
 
     def send(self, *args):
         self.messages.append(Message(*args))
+
+    def get_session(self):
+        return get_session(self.db).scope()
 
 
 class Message(list):
