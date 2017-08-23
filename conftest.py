@@ -41,6 +41,18 @@ def public_bot(protocol):
 
 
 @pytest.fixture
+def public_bot_with_db(protocol_with_db):
+    return RequestBot(
+        protocol=protocol_with_db,
+        user=User('socek!a@b'),
+        chan='#czarnobyl',
+        private=False,
+        config={},
+        temp={},
+    )
+
+
+@pytest.fixture
 def private_bot(protocol):
     return RequestBot(
         protocol=protocol,

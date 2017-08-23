@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session as BaseSession
 from sqlalchemy.engine.reflection import Inspector
 
-from .models import Base
+from grazyna.models import Base
 from contextlib import contextmanager
 
 
