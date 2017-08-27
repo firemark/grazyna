@@ -11,3 +11,10 @@ install
 % python setup.py install
 % python -m grazyna path_to_config.ini
 ```
+
+running test
+======
+
+```
+pytest grazyna/ -lv
+```
