@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 here = os.path.abspath(os.path.dirname(__file__))
 
 requires = [
-    'aiohttp==0.20.2',
+    'aiohttp==3.7.4',
     'dateparser==0.6.0',
     'SQLAlchemy==1.0.12',
     'lxml==3.3.3',
