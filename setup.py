@@ -8,7 +8,7 @@ requires = [
     'aiohttp==0.20.2',
     'dateparser==0.6.0',
     'SQLAlchemy==1.0.12',
-    'lxml==3.3.3',
+    'lxml==4.9.1',
 ]
 
 setup(
